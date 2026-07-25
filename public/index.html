@@ -4,6 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CrossBot AI - Offline Demo</title>
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CrossBot AI - Offline Demo</title>
 <style>
 :root {
   --bg-dark: #0f1117;
@@ -398,9 +404,7 @@ body {
 </style>
 </head>
 <body>
-
 <div class="main-layout">
-
 <!-- Sidebar -->
 <div class="sidebar">
   <div class="sidebar-top">
@@ -448,35 +452,26 @@ body {
       <span>TrendyWear 全球电商</span>
     </div>
     <div class="header-actions">
-      <span id="apiStatusBadge" class="live-badge badge-online" id="apiStatusLabel">实时连接</span>
+      <span id="apiStatusBadge" class="live-badge badge-online">实时连接</span>
     </div>
   </div>
   
-  <div class="messages-container" id="messagesContainer">
-    
-  </div>
+  <div class="messages-container" id="messagesContainer"></div>
   
   <div class="input-area">
-    <div class="quick-actions">
-      <button class="action-btn" onclick="sendAction('我想查询订单物流')">📦 物流查询</button>
-      <button class="action-btn" onclick="sendAction('我要退货')">🔄 退换货</button>
-      <button class="action-btn" onclick="sendAction('帮我推荐尺码')">👕 尺码推荐</button>
-      <button class="action-btn" onclick="sendAction('有什么促销活动')">🎉 优惠活动</button>
-      <button class="action-btn" onclick="sendAction('可以分期吗')">💳 支付方式</button>
-      <button class="action-btn" onclick="sendAction('多久能到货')">📅 配送时间</button>
-    </div>
+    <div class="quick-actions" id="shortcutActions"></div>
     
     <div class="input-wrapper">
       <textarea id="msgInput" placeholder="输入您的问题..." rows="1"></textarea>
       <button id="sendBtn" onclick="sendMessage()">发送</button>
     </div>
     
-    <button class="transfer-btn" onclick="alert('正在为您转接人工客服...\\n预计等待时间: ~2分钟\\n\\n（此为Demo演示）')">🎧 转接人工客服</button>
+    <button class="transfer-btn" id="transferBtn" onclick="showTransferMsg()">🎧 转接人工客服</button>
   </div>
 </div>
 
-
 <script>
+
 // Local keyword matching engine for offline/demo mode
 // ============================================
 // MULTI-LANGUAGE DYNAMIC CONTENT SYSTEM
@@ -842,5 +837,9 @@ window.addEventListener('DOMContentLoaded', () => {
 </script>
 </div>
 <!-- end main-layout -->
+</body>
+</html>
+</script>
+</div>
 </body>
 </html>
