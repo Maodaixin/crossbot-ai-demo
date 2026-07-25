@@ -186,6 +186,9 @@ body {
 
 /* Messages container */
 .messages-container {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
   flex: 1; overflow-y: auto; padding: 20px 24px;
   scroll-behavior: smooth;
 }
@@ -197,8 +200,19 @@ body {
 }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
-.message-row.agent { align-self: flex-start; }
-.message-row.user { margin-left: auto; flex-direction: row-reverse; }
+/* Merchant-mode layout: customer messages on LEFT, AI responses on RIGHT */
+.message-row.agent { 
+  flex-direction: row-reverse;
+  margin-right: 0;
+  margin-left: auto;
+  justify-content: flex-end;
+}
+.message-row.user { 
+  flex-direction: row;
+  margin-left: 0;
+  margin-right: auto;
+  justify-content: flex-start;
+}
 
 .msg-avatar {
   width: 34px; height: 34px; border-radius: 50%;
@@ -493,7 +507,7 @@ function getLocalReply(message, lang) {
     "退换货政策": { weight: 10, cn: ["退货","退款","换货","不满意","质量问题","exchange"], en: ["return","refund","exchange","cancel","defective","damaged"] },
     "尺码推荐": { weight: 8, cn: ["尺码","size","大号","小号","合身","偏大","偏小","身材","体重","身高"], en: ["size","fit","smaller","larger","tall","short","measure"] },
     "促销活动": { weight: 9, cn: ["优惠","打折","促销","折扣","满减"], en: ["discount","coupon","promo","sale","offer"] },
-    "支付方式": { weight: 7, cn: ["支付","付款","paypal","信用卡","支付宝","wechat"], en: ["payment","pay","paypal","credit card","visa","mastercard"] },
+    "支付方式": { weight: 7, cn: ["支付","付款","分期","分期支付","分期付款","paypal","信用卡","支付宝","wechat","installment"], en: ["payment","pay","paypal","credit card","visa","mastercard"] },
     "配送时间": { weight: 9, cn: ["多久到","预计送达","运输时间","express","fast delivery","运费"], en: ["how long","when will","estimated delivery","shipping time"] },
     "产品咨询": { weight: 6, cn: ["这个多少钱","有什么颜色","材质","面料","product","material","color"], en: ["what color","how much","material","fabric","in stock"] },
     "发票与售后": { weight: 5, cn: ["发票","收据","保修","售后服务","warranty","receipt","invoice"], en: ["invoice","receipt","warranty","after-sales"] }
@@ -722,18 +736,34 @@ function renderAllDynamicContent(lang) {
   const cl = document.getElementById('convList');
   if (cl) {
     cl.innerHTML = '';
-    const customers = [
-      { name: t.sidebarItems[0].name, preview: t.sidebarItems[0].preview + ' · 刚刚', time: '12:30', avatar: '📦', active: true, color: 'var(--success)', action: t.sidebarItems[0].action },
-      { name: t.sidebarItems[1].name, preview: t.sidebarItems[1].preview + ' · 3分钟前', time: '12:27', avatar: '🔄', active: false, color: 'var(--warning)', action: t.sidebarItems[1].action },
-      { name: t.sidebarItems[2].name, preview: t.sidebarItems[2].preview + ' · 5分钟前', time: '12:25', avatar: '👕', active: false, color: 'var(--accent)', action: t.sidebarItems[2].action },
-      { name: t.sidebarItems[3].name, preview: t.sidebarItems[3].preview + ' · 12分钟前', time: '12:18', avatar: '🎉', active: false, color: 'var(--danger)', action: t.sidebarItems[3].action }
-    ];
+    var timeUnits = ['刚刚','3分钟前','12分钟前','28分钟前'];
+    var times = ['12:30','12:27','12:18','12:02'];
+    
+    var customers = [];
+    for (var i = 0; i < 4; i++) {
+      customers.push({
+        name: ["Emma Wilson","Sophie Laurent","Hans Mueller","Yuki Tanaka"][i],
+        preview: t.sidebarItems[i].preview + ' · ' + timeUnits[i],
+        time: times[i],
+        avatar: t.sidebarItems[i].avatar || t.sidebarItems[i].action.charAt(0),
+        active: i === 0,
+        color: t.sidebarItems[i].color,
+        action: t.sidebarItems[i].action,
+        tag: t.sidebarItems[i].tag
+      });
+    }
     customers.forEach(function(cust) {
       var el = document.createElement('div');
       el.className = 'conv-item' + (cust.active ? ' active' : '');
       el.onclick = function() { 
-        // Show welcome message and start this topic
-        addAgentReply(cust.preview.replace(' · ' + cust.time, ''), {});
+        // Switch this conversation entry to active
+        var items = document.querySelectorAll('#convList .conv-item');
+        for (var k = 0; k < items.length; k++) items[k].className = 'conv-item';
+        el.className = 'conv-item active';
+        
+        // Show greeting from that customer perspective
+        addSysMessage('切换到客户对话 - ' + cust.name);
+        addAgentReply('您好！我是 Luna，您的专属购物助手。请问有什么可以帮您的吗？😊', {});
       };
       el.innerHTML = '<div class="conv-avatar" style="background:' + cust.color + '">' + cust.avatar + '</div><div class="conv-info"><div class="conv-name">' + cust.name + '</div><div class="conv-preview">' + cust.preview + '</div></div><div class="conv-meta"><div class="conv-time">' + cust.time + '</div></div>';
       cl.appendChild(el);
@@ -764,18 +794,18 @@ function renderAllDynamicContent(lang) {
   const tb = document.getElementById('transferBtn');
   if (tb) tb.textContent = t.transferBtn;
   
-  // Numbered shortcut actions below input
+// Numbered shortcut actions below input
   const sa = document.getElementById('shortcutActions');
-  if (sa) {
+if (sa) {
     sa.innerHTML = '';
     t.shortcuts.forEach(function(s, i) {
-      var btn = document.createElement('button');
+var btn = document.createElement('button');
       btn.className = 'action-btn';
       btn.onclick = function() { sendAction(s.action); };
       btn.innerHTML = '<span class="num">' + (i+1) + '</span> ' + s.label;
       sa.appendChild(btn);
     });
-  }
+}
 }
 
 function showTransferMsg() {
@@ -938,12 +968,9 @@ function setLang(btn, lang) {
     ar: 'مرحبا بك في TrendyWear! 👋\n\nأنا لونا، مساعد التسوق الخاص بك ومساعدة:\n\n📦 تتبع الطلب\n🔄 سياسة الإرجاع والتبادل\n👕 توصيات المقاسات\n🎉 أحدث العروض\n\nكيف يمكنني مساعدتك؟ 😊'
   };
   
-  const langNames = { zh:'中文', en:'English', de:'Deutsch', ja:'日本語', ar:'العربية' };
-  const lc = 
-  const ct = document.getElementById('convTitle');
-  if (ct && lang === 'zh') ct.textContent = '客户对话';
-  document.getElementById('currentLangLabel');
-  if (lc) lc.textContent = langNames[lang];
+  const langNames = { zh:'中文', en:'English', de:'Deutsch', ja:'日本語', ar:'العربية' };  // Update language label
+  const lc = document.getElementById('currentLangLabel');
+  if (lc) lc.textContent = langNames[lang] || lang;
   
   // Clear messages and show new welcome
   const container = document.getElementById('messagesContainer');
@@ -952,20 +979,28 @@ function setLang(btn, lang) {
 }
 
 // ===== INIT: Welcome message =====
-window.addEventListener('DOMContentLoaded', () => {
-  // Start with full UI populated by dynamic content system
+console.log('[CrossBot] DOM ready, starting initialization...');
+console.log('[CrossBot] currentLang =', currentLang);
+console.log('[CrossBot] UI_TEXTS loaded =', typeof UI_TEXTS !== 'undefined');
+console.log('[CrossBot] renderAllDynamicContent exists =', typeof renderAllDynamicContent === 'function');
+console.log('[CrossBot] addAgentReply exists =', typeof addAgentReply === 'function');
+
+document.addEventListener('DOMContentLoaded', () => {
+  // Populate sidebar and shortcuts
   renderAllDynamicContent(currentLang);
   
-  // Welcome messages
-  const welcomeMessages = {
-    zh: '您好！欢迎来到 TrendyWear 👋\n\n我是您的专属购物助手 Luna，可以帮您：\n\n📦 查询物流状态\n🔄 退换货政策\n👗 尺码推荐\n🎉 最新优惠\n\n请问有什么可以帮您的？😊',
-    en: 'Welcome to TrendyWear! 👋\n\nI am your shopping assistant Luna, here to help you with:\n\n📦 Track your order\n🔄 Return & Exchange policy\n👕 Size recommendations\n🎉 Latest deals\n\nHow can I assist you? 😊',
-    de: 'Willkommen bei TrendyWear! 👋\n\nIch bin Ihr Einkaufsassistent Luna und helfe Ihnen gerne:\n\n📦 Sendungsverfolgung\n🔄 Rückgabe & Umtausch\n👕 Größempfehlungen\n🎉 Aktuelle Angebote\n\nWie kann ich Ihnen helfen? 😊',
-    ja: 'TrendyWearへようこそ！👋\n\nお買い物のアシスタントLunaです。以下をご案内できます：\n\n📦 配送追跡\n🔄 返品・交換\n👕 サイズガイド\n🎉 最新キャンペーン\n\n何かお手伝いできることはありますか？😊',
-    ar: 'مرحبا بك في TrendyWear! 👋\n\nأنا لونا، مساعد التسوق الخاص بك ومساعدة:\n\n📦 تتبع الطلب\n🔄 سياسة الإرجاع والتبادل\n👕 توصيات المقاسات\n🎉 أحدث العروض\n\nكيف يمكنني مساعدتك؟ 😊'
-  };
-  
-  addAgentReply(welcomeMessages[currentLang] || welcomeMessages.zh, {});
+  // Show welcome ONLY if chat is empty
+  var mc = document.getElementById('messagesContainer');
+  if (mc && !mc.querySelector('.message-row')) {
+    var wmsg = {
+      zh: '您好！欢迎来到 TrendyWear 👋\n我是 Luna，您的专属购物助手。请问有什么可以帮您的？😊',
+      en: 'Welcome to TrendyWear! 👋\nI am Luna, your shopping assistant. How can I help? 😊',
+      de: 'Willkommen bei TrendyWear! 👋\nIch bin Luna, Ihr Einkaufsassistent. Wie kann ich helfen? 😊',
+      ja: 'TrendyWearへようこそ！👋\nLunaです。ご質問はお気軽にどうぞ！😊',
+      ar: 'مرحبا بك في TrendyWear! 👋\nأنا لونا، مساعد التسوق. كيف يمكنني مساعدتك؟ 😊'
+    };
+    addAgentReply(wmsg[currentLang] || wmsg.zh, {});
+  }
 });
 </script>
 </div>
