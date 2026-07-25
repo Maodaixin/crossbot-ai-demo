@@ -428,54 +428,15 @@ body {
     </div>
   </div>
   
-  <div class="conv-section-title">快速开始</div>
-  <div class="conv-list" id="convList">
-    <div class="conv-item active" onclick="sendAction('📦 查询物流状态')">
-      <div class="conv-avatar" style="background: var(--success);">📦</div>
-      <div class="conv-info">
-        <div class="conv-name">物流查询</div>
-        <div class="conv-preview">实时追踪包裹位置...</div>
-      </div>
-      <div class="conv-meta"><div class="conv-time">热门</div></div>
-    </div>
-    <div class="conv-item" onclick="sendAction('🔄 退换货政策')">
-      <div class="conv-avatar" style="background: var(--warning);">🔄</div>
-      <div class="conv-info">
-        <div class="conv-name">退换货</div>
-        <div class="conv-preview">无忧保障服务...</div>
-      </div>
-      <div class="conv-meta"><div class="conv-time">便捷</div></div>
-    </div>
-    <div class="conv-item" onclick="sendAction('👕 尺码推荐')">
-      <div class="conv-avatar" style="background: var(--accent);">👕</div>
-      <div class="conv-info">
-        <div class="conv-name">尺码推荐</div>
-        <div class="conv-preview">精准匹配您的身材...</div>
-      </div>
-      <div class="conv-meta"><div class="conv-time">智能</div></div>
-    </div>
-    <div class="conv-item" onclick="sendAction('🎉 促销活动')">
-      <div class="conv-avatar" style="background: var(--danger);">🎉</div>
-      <div class="conv-info">
-        <div class="conv-name">优惠活动</div>
-        <div class="conv-preview">限时折扣来袭...</div>
-      </div>
-      <div class="conv-meta"><div class="conv-time">火爆</div></div>
-    </div>
-  </div>
+  <div class="conv-section-title" id="quickStartTitle">快速开始</div>
+  <div class="conv-list" id="convList"></div>
   
   <div class="sidebar-footer">
     <div class="stats-row">
-      <span>当前语言:</span>
+      <span id="langLabel">当前语言:</span>
       <span id="currentLangLabel">中文</span>
     </div>
-    <div class="lang-toggle">
-      <button class="lang-btn active" onclick="setLang(this, 'zh')">中文</button>
-      <button class="lang-btn" onclick="setLang(this, 'en')">EN</button>
-      <button class="lang-btn" onclick="setLang(this, 'de')">DE</button>
-      <button class="lang-btn" onclick="setLang(this, 'ja')">JA</button>
-      <button class="lang-btn" onclick="setLang(this, 'ar')">AR</button>
-    </div>
+    <div class="lang-toggle" id="langToggle"></div>
   </div>
 </div>
 
@@ -483,16 +444,16 @@ body {
 <div class="chat-area">
   <div class="chat-header">
     <div class="chat-title">
-      <h1>💬 对话窗口</h1>
+      <h1 id="chatTitle">💬 对话窗口</h1>
       <span>TrendyWear 全球电商</span>
     </div>
     <div class="header-actions">
-      <span id="apiStatusBadge" class="live-badge badge-online">实时连接</span>
+      <span id="apiStatusBadge" class="live-badge badge-online" id="apiStatusLabel">实时连接</span>
     </div>
   </div>
   
   <div class="messages-container" id="messagesContainer">
-    <div class="demo-mode-banner" style="background:rgba(34,197,94,0.1);border-color:rgba(34,197,94,0.2);color:#22c55e;">🚀 AI 智能客服演示 · 支持中/英/德/日/阿五语</div>
+    
   </div>
   
   <div class="input-area">
@@ -514,118 +475,200 @@ body {
   </div>
 </div>
 
-<script>
-const API_URL = "/api/chat";
-let isTyping = false;
-let currentLang = 'zh';
 
+<script>
+// Local keyword matching engine for offline/demo mode
 // ============================================
-// LOCAL KEYWORD MATCHING ENGINE (offline mode)
+// MULTI-LANGUAGE DYNAMIC CONTENT SYSTEM
 // ============================================
-function getLocalReply(message, lang) {
-  const msg_lower = message.toLowerCase();
-  const is_english = /[abcdefghijklmnopqrstuvwxyzeordertrackingreturnshipmentshippingdeliverypromotiondiscountsizing]/.test(msg_lower);
+
+const UI_TEXTS = {
+  zh: {
+    title: "对话窗口",
+    quickStart: "快速开始",
+    langLabel: "当前语言:",
+    sendBtn: "发送",
+    inputPlaceholder: "输入您的问题...",
+    transferBtn: "🎧 转接人工客服",
+    transferMsg: "正在为您转接人工客服...\n预计等待时间: ~2分钟\n\n（此为Demo演示）",
+    shortcuts: [
+      { label: "📦 物流查询", action: "我想查询订单物流" },
+      { label: "🔄 退换货", action: "我要退货" },
+      { label: "👕 尺码推荐", action: "帮我推荐尺码" },
+      { label: "🎉 优惠活动", action: "有什么促销活动" },
+      { label: "💳 支付方式", action: "可以分期吗" },
+      { label: "📅 配送时间", action: "多久能到货" }
+    ],
+    sidebarItems: [
+      { name: "物流查询", preview: "实时追踪包裹位置...", action: "📦 查询物流状态", color: "var(--success)", tag: "热门", active: true },
+      { name: "退换货", preview: "无忧保障服务...", action: "🔄 退换货政策", color: "var(--warning)", tag: "便捷", active: false },
+      { name: "尺码推荐", preview: "精准匹配您的身材...", action: "👕 尺码推荐", color: "var(--accent)", tag: "智能", active: false },
+      { name: "优惠活动", preview: "限时折扣来袭...", action: "🎉 促销活动", color: "var(--danger)", tag: "火爆", active: false }
+    ]
+  },
+  en: {
+    title: "Chat Window",
+    quickStart: "Quick Start",
+    langLabel: "Language:",
+    sendBtn: "Send",
+    inputPlaceholder: "Type your message...",
+    transferBtn: "🎧 Transfer to Human Agent",
+    transferMsg: "Transferring you to a human agent...\nEstimated wait: ~2 minutes\n\n(Demo mode)",
+    shortcuts: [
+      { label: "📦 Tracking", action: "I want to track my order" },
+      { label: "🔄 Returns", action: "I need to return an item" },
+      { label: "👕 Size Help", action: "Help me with sizing" },
+      { label: "🎉 Promotions", action: "What promotions are there" },
+      { label: "💳 Payment", action: "Can I pay by installments" },
+      { label: "📅 Shipping Time", action: "How long for delivery" }
+    ],
+    sidebarItems: [
+      { name: "Tracking", preview: "Track your package...", action: "📦 Track my order", color: "var(--success)", tag: "Popular", active: true },
+      { name: "Returns", preview: "Hassle-free policy...", action: "🔄 Return & Exchange", color: "var(--warning)", tag: "Easy", active: false },
+      { name: "Size Guide", preview: "Find your perfect fit...", action: "👕 Size recommendation", color: "var(--accent)", tag: "Smart", active: false },
+      { name: "Deals", preview: "Limited offers...", action: "🎉 Promotions", color: "var(--danger)", tag: "Hot", active: false }
+    ]
+  },
+  de: {
+    title: "Chat-Fenster",
+    quickStart: "Schnellstart",
+    langLabel: "Sprache:",
+    sendBtn: "Senden",
+    inputPlaceholder: "Nachricht eingeben...",
+    transferBtn: "🎧 Mit Support verbinden",
+    transferMsg: "Sie werden mit dem Support verbunden...\nWartezeit: ca. 2 Minuten\n\n(Demo-Modus)",
+    shortcuts: [
+      { label: "📦 Verfolgen", action: "Ich will meine Bestellung verfolgen" },
+      { label: "🔄 Rückgabe", action: "Ich will etwas zurückgeben" },
+      { label: "👕 Größe", action: "Helfen Sie mir bei der Größenwahl" },
+      { label: "🎉 Angebote", action: "Welche Angebote gibt es" },
+      { label: "💳 Zahlung", action: "Kann ich in Raten zahlen" },
+      { label: "📅 Versandzeit", action: "Wie lange dauert die Lieferung" }
+    ],
+    sidebarItems: [
+      { name: "Verfolgung", preview: "Paket verfolgen...", action: "📦 Verfolge mein Paket", color: "var(--success)", tag: "Beliebt", active: true },
+      { name: "Rückgabe", preview: "Sorgfreie Rückgabe...", action: "🔄 Rückgabe & Umtausch", color: "var(--warning)", tag: "Einfach", active: false },
+      { name: "Größe", preview: "Perfekte Größe finden...", action: "👕 Größempfehlung", color: "var(--accent)", tag: "Intelligent", active: false },
+      { name: "Angebote", preview: "Limitierte Angebote...", action: "🎉 Angebote", color: "var(--danger)", tag: "Heiß", active: false }
+    ]
+  },
+  ja: {
+    title: "チャットウィンドウ",
+    quickStart: "クイックスタート",
+    langLabel: "言語:",
+    sendBtn: "送信",
+    inputPlaceholder: "メッセージを入力...",
+    transferBtn: "🎧 担当者へ接続",
+    transferMsg: "担当者にご接続します...\nお待たせ時間: 約2分\n\n（デモモード）",
+    shortcuts: [
+      { label: "📦 追跡", action: "注文を追跡したい" },
+      { label: "🔄 返品", action: "返品したいです" },
+      { label: "👕 サイズ", action: "サイズを教えてほしい" },
+      { label: "🎉 キャンペーン", action: "キャンペーン情報を教えてください" },
+      { label: "💳 支払い", action: "分割払いできますか" },
+      { label: "📅 配送時間", action: "配送にどれくらい掛かりますか" }
+    ],
+    sidebarItems: [
+      { name: "追跡", preview: "荷物を追跡...", action: "📦 注文追跡", color: "var(--success)", tag: "人気", active: true },
+      { name: "返品", preview: "簡単返品...", action: "🔄 返品・交換", color: "var(--warning)", tag: "簡単", active: false },
+      { name: "サイズ", preview: "ぴったりのサイズ...", action: "👕 サイズガイド", color: "var(--accent)", tag: "スマート", active: false },
+      { name: "キャンペーン", preview: "限定キャンペーン...", action: "🎉 キャンペーン", color: "var(--danger)", tag: "注目", active: false }
+    ]
+  },
+  ar: {
+    title: "نافذة الدردشة",
+    quickStart: "البدء السريع",
+    langLabel: "اللغة:",
+    sendBtn: "إرسال",
+    inputPlaceholder: "اكتب رسالتك...",
+    transferBtn: "🎧 توصيل بالعميل",
+    transferMsg: "جاري توصيلك بمسؤول خدمة العملاء...\nوقت الانتظار المتوقع: ~٢ دقيقة\n\n(وضع العرض التجريبي)",
+    shortcuts: [
+      { label: "📦 تتبع", action: "أريد تتبع طلبي" },
+      { label: "🔄 إرجاع", action: "أريد إرجاع منتج" },
+      { label: "👕 مقاس", action: "ساعدني في اختيار المقاس" },
+      { label: "🎉 عروض", action: "ما هي العروض الحالية" },
+      { label: "💳 دفع", action: "هل يمكنني بالدفع بالتقسيط" },
+      { label: "📅 وقت التوصيل", action: "كم يستغرق التوصيل" }
+    ],
+    sidebarItems: [
+      { name: "تتبع", preview: "تتبع طردك...", action: "📦 تابع طلبي", color: "var(--success)", tag: "شائع", active: true },
+      { name: "إرجاع", preview: "سياسة إرجاع سهلة...", action: "🔄 إرجاع وتبادل", color: "var(--warning)", tag: "سهل", active: false },
+      { name: "مقاس", preview: "المقاس المثالي...", action: "👕 توصية المقاس", color: "var(--accent)", tag: "ذكي", active: false },
+      { name: "عروض", preview: "عروض محدودة...", action: "🎉 العروض", color: "var(--danger)", tag: "مهم", active: false }
+    ]
+  }
+};
+
+function renderAllDynamicContent(lang) {
+  const t = UI_TEXTS[lang] || UI_TEXTS.zh;
   
-  // Scoring system
-  const categories = {
-    "物流查询": { weight: 10, cn: ["物流","快递","发货","到货","几天到","运单","包裹","tracking"], en: ["order","track","where is","shipping","delivery","package","transit"] },
-    "退换货政策": { weight: 10, cn: ["退货","退款","换货","不满意","质量问题","exchange"], en: ["return","refund","exchange","cancel","defective","damaged"] },
-    "尺码推荐": { weight: 8, cn: ["尺码","size","大号","小号","合身","偏大","偏小","身材","体重","身高"], en: ["size","fit","smaller","larger","tall","short","measure"] },
-    "促销活动": { weight: 9, cn: ["优惠","打折","促销","折扣","满减"], en: ["discount","coupon","promo","sale","offer"] },
-    "支付方式": { weight: 7, cn: ["支付","付款","paypal","信用卡","支付宝","wechat"], en: ["payment","pay","paypal","credit card","visa","mastercard"] },
-    "配送时间": { weight: 9, cn: ["多久到","预计送达","运输时间","express","fast delivery","运费"], en: ["how long","when will","estimated delivery","shipping time"] },
-    "产品咨询": { weight: 6, cn: ["这个多少钱","有什么颜色","材质","面料","product","material","color"], en: ["what color","how much","material","fabric","in stock"] },
-    "发票与售后": { weight: 5, cn: ["发票","收据","保修","售后服务","warranty","receipt","invoice"], en: ["invoice","receipt","warranty","after-sales"] }
-  };
+  const qst = document.getElementById('quickStartTitle');
+  if (qst) qst.textContent = t.quickStart;
   
-  let best_match = null;
-  let best_score = 0;
+  const ll = document.getElementById('langLabel');
+  if (ll) ll.textContent = t.langLabel;
   
-  for (const [cat_name, cat_info] of Object.entries(categories)) {
-    let score = 0;
-    for (const kw of cat_info.cn) {
-      if (msg_lower.includes(kw)) score += cat_info.weight;
-    }
-    for (const kw of cat_info.en) {
-      if (msg_lower.includes(kw)) score += Math.floor(cat_info.weight * 0.5);
-    }
-    if (score > best_score) {
-      best_score = score;
-      best_match = cat_name;
-    }
+  // Sidebar items
+  const cl = document.getElementById('convList');
+  if (cl) {
+    cl.innerHTML = '';
+    t.sidebarItems.forEach((item, i) => {
+      const activeClass = item.active ? 'active' : '';
+      const el = document.createElement('div');
+      el.className = 'conv-item ' + activeClass;
+      el.onclick = function() { sendAction(item.action); };
+      el.innerHTML = '<div class="conv-avatar" style="background: ' + item.color + ';">' + item.action.charAt(0) + '</div><div class="conv-info"><div class="conv-name">' + item.name + '</div><div class="conv-preview">' + item.preview + '</div></div><div class="conv-meta"><div class="conv-time">' + item.tag + '</div></div>';
+      cl.appendChild(el);
+    });
   }
   
-  if (!best_match) return null;
-  
-  // Templates with translations
-  const templates = {
-    "物流查询": {
-      zh: "您好！您的订单正在全力运输中 📦\n\n我们可以帮您做以下几件事：\n1️⃣ 输入运单号，实时追踪包裹位置\n2️⃣ 查看预计送达日期\n3️⃣ 如有异常主动联系您\n\n请问需要哪一项服务？",
-      en: "Your order is on its way! 📦\n\nI can help you with:\n1️⃣ Track your package by tracking number\n2️⃣ Check estimated delivery date\n3️⃣ Alert you if there are any delays\n\nWhat would you like to do?",
-      de: "Ihre Bestellung ist auf dem Weg! 📦\n\nIch kann Ihnen helfen bei:\n1️⃣ Paketverfolgung mit Sendungsnummer\n2️⃣ Geschätzte Lieferdatum prüfen\n3️⃣ Benachrichtigung bei Verzögerungen\n\nWas möchten Sie tun?",
-      ja: "ご注文は配送中です！📦\n\nお手伝いできます：\n1️⃣ 出荷番号で追跡\n2️⃣ 配達予定日を確認\n3️⃣ 遅延のアラート\n\nご希望のサービスは？",
-      ar: "طلبك في طريقه! 📦\n\nيمكنني مساعدتك في:\n1️⃣ تتبع الطرد برمز الشحن\n2️⃣ التحقق من تاريخ التسليم المتوقع\n3️⃣ التنبيه عند التأخير\n\nماذا تريد أن تفعل؟"
-    },
-    "退换货政策": {
-      zh: "🔄 **退换货无忧保障**\n\n✅ 30天无理由退货（不影响二次销售的商品）\n✅ 质量问题我们承担往返运费\n✅ 换货免邮费，优先处理\n\n退货流程：\n1. 在「我的订单」页面申请\n2. 寄回至最近海外仓\n3. 收到后5个工作日内原路退款\n\n请问您需要退货还是换货？",
-      en: "🔄 **Hassle-Free Returns**\n\n✅ 30-day no-questions return policy\n✅ Free return shipping for quality issues\n✅ Priority processing for exchanges\n\nHow to return:\n1. Apply from Your Orders page\n2. Ship to nearest warehouse\n3. Refund within 5 business days after receiving\n\nWould you like to return or exchange?",
-      de: "🔄 **Sorgenfreie Rückgabe**\n\n✅ 30-Tage-Rückgaberecht ohne Angabe von Gründen\n✅ Kostenloser Rückversand bei Qualitätsproblemen\n✅ Express-Behandlung für Umtausch\n\nRückgabeprozess:\n1. Antrag über \"Meine Bestellungen\"\n2. Zum nächstgelegenen Lager zurücksenden\n3. Erstattung innerhalb von 5 Werktagen\n\nMöchten Sie zurückgeben oder umtauschen?",
-      ja: "🔄 **簡単返品ポリシー**\n\n✅ 30日間無条件返品（二次販売可能な商品）\n✅ 品質問題の往復送料無料\n✅ 交換優先対応・送料無料\n\n返品手続き：\n1. 「マイオーダー」から申請\n2. 最寄りの倉庫へ返品\n3. 受け取り後5営業日以内に返金\n\n返品と交換、どちらですか？",
-      ar: "🔄 **إرجاع سهل بدون متاعب**\n\n✅ سياسة إرجاع 30 يوم بدون أسئلة\n✅ شحن مجاني للإرجاع عند مشاكل الجودة\n✅ معالجة أولوية للتبادل\n\nكيفية الإرجاع:\n1. طلب من صفحة طلباتك\n2. الإرسال لأقرب مستودع\n3. استرداد خلال 5 أيام عمل\n\nهل تريد الإرجاع أو التبادل؟"
-    },
-    "尺码推荐": {
-      zh: "👕 **智能尺码助手**\n\n为了给您精准推荐，请告诉我：\n• 您想购买的**具体产品名称**\n• 您的**身高和体重**（可选）\n• 平时穿什么**尺码/品牌**\n\n💡 小贴士：我们的亚洲版型通常偏小1码，建议拍大一码。",
-      en: "👕 **Smart Size Finder**\n\nTo give you the perfect recommendation, please tell me:\n• The **exact product name** you want\n• Your **height and weight** (optional)\n• What size you usually wear in other brands\n\n💡 Tip: Our Asian sizing runs 1 size small.",
-      de: "👕 **Intelligenter Größengenerator**\n\nFür eine präzise Empfehlung teilen Sie mir bitte mit:\n• Den **genauen Produktnamen**, den Sie kaufen möchten\n• Ihre **Größe und Gewicht** (optional)\n• Welche Größe Sie normalerweise bei anderen Marken tragen\n\n💡 Tipp: Unsere asiatische剪裁 fällt 1 Größe kleiner aus.",
-      ja: "👕 **スマートサイズガイド**\n\n正確な推荐のため、以下をお知らせください：\n• **商品名**\n• **身長と体重**（任意）\n• 普段着ている**サイズ/ブランド**\n\n💡 ヒント：アジアサイズは1つ小さい recommended。一つ上をおすすめします。",
-      ar: "👕 **مساعد المقاسات الذكي**\n\nللتوصية الدقيقة، أخبرني:\n• **اسم المنتج** الذي تريده\n• **طولك ووزنك** (اختياري)\n• **المقاس/العلامة** التي ترتديها عادة\n\n💡 نصيحة: المقاسات الآسيوية أصغر بمقاس واحد."
-    },
-    "促销活动": {
-      zh: "🎉 **限时优惠活动**\n\n🔥 新客专享：注册即送 ¥50 优惠券\n📦 满 ¥299 免全球运费\n🎁 关注公众号再领 ¥30\n⭐ VIP会员额外享 9折\n\n现在下单还有抽奖机会！",
-      en: "🎉 **Limited-Time Offers**\n\n🔥 New customer: Get $50 coupon on signup\n📦 Free worldwide shipping on orders over $50\n🎁 Follow our social media for extra $30\n⭐ VIP members enjoy extra 10% off\n\nAdd to cart now for a chance to win free gifts!",
-      de: "🎉 **Zeitlich begrenzte Angebote**\n\n🔥 Neukunden: Erhalten Sie $50 Gutschein\n📦 Kostenloser Versand weltweit ab $50\n🎁 Folgen Sie uns für extra $30\n⭐ VIP-Mitglieder erhalten zusätzliche 10% Rabatt\n\nJetzt bestellen für die Chance auf Gratisgeschenke!",
-      ja: "🎉 **期間限定キャンペーン**\n\n🔥 新規会員：登録で$50クーポン\n📦 $50以上で世界無料配送\n🎁 SNSフォローでさらに$30\n⭐ VIPメンバー追加10%OFF\n\n今すぐご購入でプレゼント当選チャンス！",
-      ar: "🎉 **عروض محدودة الوقت**\n\n🔥 عملاء جدد: احصل على قسيمة $50\n📦 شحن مجاني عالمي فوق $50\n🎁 تابعنا للحصول على $30 إضافي\n⭐ أعضاء VIP يحصلون على خصم إضافي 10%\n\nاطلب الآن لفرصة الفوز بهدايا مجانية!"
-    },
-    "支付方式": {
-      zh: "💳 **支持的支付方式**\n\n• PayPal / 信用卡 (Visa/MasterCard)\n• Apple Pay / Google Pay\n• 支付宝 / 微信支付\n• 分期付款（支持花呗3/6/12期）\n\n所有交易由 Stripe 加密保护，100%安全 ✅",
-      en: "💳 **Accepted Payment Methods**\n\n• PayPal / Credit Card (Visa/MasterCard)\n• Apple Pay / Google Pay\n• All major debit cards\n• Buy Now, Pay Later (Klarna/Afterpay)\n\nAll transactions secured by Stripe encryption 🔒",
-      de: "💳 **Akzeptierte Zahlungsmethoden**\n\n• PayPal / Kreditkarte (Visa/MasterCard)\n• Apple Pay / Google Pay\n• Alle gängigen Debitkarten\n• Ratenzahlung (Klarna/Afterpay)\n\nAlle Transaktionen durch Stripe-Verschlüsselung geschützt 🔒",
-      ja: "💳 **対応支払い方法**\n\n• PayPal / クレジットカード (Visa/MasterCard)\n• Apple Pay / Google Pay\n• 主要なデビットカード\n• スラッシュ払い（Klarna/Afterpay対応）\n\nすべての取引はStripe暗号化で保護されています 🔒",
-      ar: "💳 **طرق الدفع المقبولة**\n\n• PayPal / بطاقة الائتمان (Visa/MasterCard)\n• Apple Pay / Google Pay\n• جميع بطاقات الخصم الرئيسية\n• اشترِ الآن وادفع لاحقاُ (Klarna/Afterpay)\n\nجميع المعاملات محمية بتشفير Stripe 🔒"
-    },
-    "配送时间": {
-      zh: "⏱ **全球配送时效**\n\n🇺🇸 美国/加拿大：7-12个工作日\n🇪🇺 欧洲各国：10-15个工作日\n🇬🇧 英国：12-18个工作日\n🇯🇵 日韩：5-8个工作日\n🌏 东南亚：5-10个工作日\n\n🚀 急件可选择 DHL/FedEx 特快（3-5天）",
-      en: "⏱ **Global Shipping Times**\n\n🇺🇸 USA/Canada: 7-12 business days\n🇪🇺 Europe: 10-15 business days\n🇬🇧 UK: 12-18 business days\n🇯🇵 Japan/Korea: 5-8 business days\n🌏 Southeast Asia: 5-10 business days\n\n🚀 Express available via DHL/FedEx (3-5 days)",
-      de: "⏱ **Globale Lieferzeiten**\n\n🇺🇸 USA/Kanada: 7-12 Werktage\n🇪🇺 Europa: 10-15 Werktage\n🇬🇧 Großbritannien: 12-18 Werktage\n🇯🇵 Japan/Korea: 5-8 Werktage\n🌏 Südostasien: 5-10 Werktage\n\n🚀 Express per DHL/FedEx verfügbar (3-5 Tage)",
-      ja: "⏱ **国際配送時間**\n\n🇺🇸 米国/カナダ：7-12営業日\n🇪🇺 欧州：10-15営業日\n🇬🇧 イギリス：12-18営業日\n🇯🇵 日本/韓国：5-8営業日\n🌏 東南アジア：5-10営業日\n\n🚀 DHL/FedExエクスプレスも利用可能（3-5日）",
-      ar: "⏱ **أوقات الشحن العالمية**\n\n🇺🇸 الولايات المتحدة/كندا: 7-12 يوم عمل\n🇪🇺 أوروبا: 10-15 يوم عمل\n🇬🇧 بريطانيا: 12-18 يوم عمل\n🇯🇵 اليابان/كوريا: 5-8 أيام عمل\n🌏 جنوب شرق آسيا: 5-10 أيام عمل\n\n🚀 تعبير متاح عبر DHL/FedEx (3-5 أيام)"
-    },
-    "产品咨询": {
-      zh: "🛍️ **关于产品您的问题**\n\n请告诉我您感兴趣的产品名称，我可以帮您查询：\n• 库存状态和可选颜色/尺寸\n• 材质和洗涤说明\n• 同类商品对比推荐\n• 真实买家评价摘要\n\n直接发产品名给我即可！",
-      en: "🛍️ **Product Inquiry**\n\nTell me the product name and I can check:\n• Stock status & available colors/sizes\n• Material details & care instructions\n• Similar product recommendations\n• Summary of real buyer reviews\n\nJust send me the product name!",
-      de: "🛍️ **Produktanfrage**\n\nSagen Sie mir den Produktname und ich kann prüfen:\n• Lagerstatus & verfügbare Farben/Größen\n• Materialdetails & Pflegehinweise\n• Ähnliche Produktempfehlungen\n• Zusammenfassung echter Käuferbewertungen\n\nSchicken Sie mir einfach den Produktnamen!",
-      ja: "🛍️ **製品についてのお問い合わせ**\n\n製品名を教えていただければ確認できます：\n• 在庫状況と利用可能なカラー/サイズ\n• 素材詳細とケア手順書\n• 類似製品のおすすめ\n• 実際の購入者のレビュー概要\n\n製品名を送ってください！",
-      ar: "🛍️ **استفسار المنتج**\n\nأخبرني باسم المنتج وسأتحقق من:\n• حالة المخزون والألوان/المقاسات المتاحة\n• تفاصيل المواد وإرشادات العناية\n• توصيات منتجات مماثلة\n• ملخص مراجعات المشترين الحقيقيين\n\nأرسل لي اسم المنتج فقط!"
-    },
-    "发票与售后": {
-      zh: "📄 **发票与售后政策**\n\n🧾 电子发票：下单时可申请，自动发送至邮箱\n🔧 质保期：服装1年/电子产品2年\n📞 售后服务：在线客服工作日 9:00-22:00\n\n售后问题请提供：订单号 + 问题描述 + 照片/视频",
-      en: "📄 **Invoices & After-Sales**\n\n🧾 E-invoice: Request at checkout, sent to your email\n🔧 Warranty: 1 year for apparel / 2 years for electronics\n📞 Support: Available Mon-Sun 9am-10pm\n\nFor after-sales, please provide: Order # + issue description + photo/video",
-      de: "📄 **Rechnungen & Kundendienst**\n\n🧾 Elektronische Rechnung: Bei der Bestellung anfordern\n🔧 Garantie: 1 Jahr für Bekleidung / 2 Jahre für Elektronik\n📞 Support: Mo-So 9-22 Uhr\n\nFür Kundendienst bitte angeben: Bestellnr. + Problembeschreibung + Foto/Video",
-      ja: "📄 **請求書とアフターサービス**\n\n🧾電子請求書：チェックアウト時にリクエスト\n🔧保証：衣類1年/電子的2年\n📞サポート：月-日 9:00-22:00\n\nアフターサービスにはご注文番号+説明+写真/動画を記載してください。",
-      ar: "📄 **الفواتير وخدمة ما بعد البيع**\n\n🧾 فاتورة إلكترونية: طلب عند الدفع\n🔧 ضمان: سنة واحدة للملابس / سنتان للإلكترونيات\n📞 دعم: متاح من الاثنين للأحد 9ص-10م\n\nلمشاكل خدمة ما بعد البيع، يرجى تقديم: رقم الطلب + وصف المشكلة + صورة/فيديو"
-    }
-  };
-  
-  const template = templates[best_match];
-  if (template) {
-    return template[lang] || template[is_english ? "en" : "zh"];
+  // Language toggle buttons
+  const lt = document.getElementById('langToggle');
+  if (lt) {
+    lt.innerHTML = '';
+    ['zh','en','de','ja','ar'].forEach(l => {
+      const btn = document.createElement('button');
+      btn.className = 'lang-btn' + (l === lang ? ' active' : '');
+      const labels = { zh:'中文', en:'EN', de:'DE', ja:'JA', ar:'AR' };
+      btn.textContent = labels[l];
+      btn.onclick = function() { setLang(this, l); };
+      lt.appendChild(btn);
+    });
   }
-  return null;
+  
+  const si = document.getElementById('msgInput');
+  if (si) si.placeholder = t.inputPlaceholder;
+  
+  const sb = document.getElementById('sendBtn');
+  if (sb) sb.textContent = t.sendBtn;
+  
+  const tb = document.getElementById('transferBtn');
+  if (tb) tb.textContent = t.transferBtn;
+  
+  // Numbered shortcut actions
+  const sa = document.getElementById('shortcutActions');
+  if (sa) {
+    sa.innerHTML = '';
+    t.shortcuts.forEach((s, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'action-btn';
+      btn.onclick = function() { sendAction(s.action); };
+      btn.innerHTML = '<span class="num">' + (i+1) + '</span> ' + s.label;
+      sa.appendChild(btn);
+    });
+  }
 }
 
+function showTransferMsg() {
+  const t = UI_TEXTS[currentLang] || UI_TEXTS.zh;
+  alert(t.transferMsg);
+}
+
+
+// ===== LOCAL KEYWORD MATCHING ENGINE =====
 // ============================================
-// MESSAGE RENDERING
+// MESSAGE RENDERING (unchanged logic)
 // ============================================
 
 function getTime() {
@@ -637,7 +680,6 @@ function scrollToBottom() {
   setTimeout(() => c.scrollTo({ top: c.scrollHeight, behavior: 'smooth' }), 80);
 }
 
-// Add a system message
 function addSysMessage(text) {
   const div = document.createElement('div');
   div.className = 'sys-msg';
@@ -646,90 +688,62 @@ function addSysMessage(text) {
   scrollToBottom();
 }
 
-// Add an agent message with full HTML support (with RTL support for Arabic)
-function addAgentReply(content, extra = {}) {
+function addAgentReply(content, extra) {
+  if (!extra) extra = {};
   const container = document.getElementById('messagesContainer');
   const group = document.createElement('div');
   group.className = 'message-row agent';
   
-  // Process content: convert markdown bold, handle newlines, detect RTL
   let processed = content
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
     .replace(/\n/g, '<br>');
   
-  // Detect if Arabic (RTL)
   const isRTL = currentLang === 'ar' || /[\u0600-\u06FF]/.test(content);
   group.style.direction = isRTL ? 'rtl' : 'ltr';
-  if (isRTL) {
-    group.style.textAlign = 'right';
-  }
+  if (isRTL) { group.style.textAlign = 'right'; }
   
-  const btnLabels = {
+  var btnLabels = {
     zh: {ok:'👍 有帮助', bad:'👎 无帮助', marked_ok:'已标记 👍', marked_bad:'已标记 👎'},
     en: {ok:'👍 Helpful', bad:'👎 Unhelpful', marked_ok:'Marked 👍', marked_bad:'Marked 👎'},
     de: {ok:'👍 Hilfreich', bad:'👎 Nicht hilfreich', marked_ok:'Markiert 👍', marked_bad:'Markiert 👎'},
     ja: {ok:'👍 役に立った', bad:'👎 役に立たなかった', marked_ok:'マーク済み 👍', marked_bad:'マーク済み 👎'},
     ar: {ok:'👍 مفيد', bad:'👎 غير مفيد', marked_ok:'تم التحديد 👍', marked_bad:'تم التحديد 👎'}
   };
-  const labels = btnLabels[currentLang] || btnLabels.zh;
+  var labels = btnLabels[currentLang] || btnLabels.zh;
   
-  group.innerHTML = `
-    <div class="msg-avatar">🤖</div>
-    <div class="msg-body">
-      <div class="msg-text">${processed}</div>
-      <div class="feedback-bar">
-        <button class="fb-btn ok" onclick="this.style.background='rgba(34,197,94,.15)';this.style.borderColor='#22c55e';this.textContent='${labels.marked_ok}'">👍 ${labels.ok}</button>
-        <button class="fb-btn bad" onclick="this.style.background='rgba(239,68,68,.15)';this.style.borderColor='#ef4444';this.textContent='${labels.marked_bad}'">👎 ${labels.bad}</button>
-      </div>
-      <div class="msg-footer">
-        <span class="msg-sender msg-agent">Luna (AI)</span>
-        <span class="msg-time">${getTime()}${extra.time ? ' · ⏱ '+extra.time+'s' : ''}</span>
-      </div>
-    </div>`;
+  group.innerHTML = '<div class="msg-avatar">🤖</div><div class="msg-body"><div class="msg-text">' + processed + '</div><div class="feedback-bar"><button class="fb-btn ok" onclick="this.style.background=\'rgba(34,197,94,.15)\';this.style.borderColor=\'#22c55e\';this.textContent=\'' + labels.marked_ok + '\'">👍 ' + labels.ok + '</button><button class="fb-btn bad" onclick="this.style.background=\'rgba(239,68,68,.15)\';this.style.borderColor=\'#ef4444\';this.textContent=\'' + labels.marked_bad + '\'">👎 ' + labels.bad + '</button></div><div class="msg-footer"><span class="msg-sender msg-agent">Luna (AI)</span><span class="msg-time">' + getTime() + (extra.time ? ' · ⏱ '+extra.time+'s' : '') + '</span></div></div>';
   
   container.appendChild(group);
   scrollToBottom();
 }
 
-// Add a user message
 function addUserMessage(text) {
   const container = document.getElementById('messagesContainer');
   const group = document.createElement('div');
   group.className = 'message-row user';
   
-  // Detect RTL for Arabic
   const isRTL = currentLang === 'ar' || /[\u0600-\u06FF]/.test(text);
   group.style.direction = isRTL ? 'rtl' : 'ltr';
   
-  group.innerHTML = `
-    <div class="msg-avatar">李</div>
-    <div class="msg-body">
-      <div class="msg-text">${text.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
-      <div class="msg-footer">
-        <span class="msg-time msg-you">${getTime()}</span>
-      </div>
-    </div>`;
+  group.innerHTML = '<div class="msg-avatar">李</div><div class="msg-body"><div class="msg-text">' + text.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</div><div class="msg-footer"><span class="msg-time msg-you">' + getTime() + '</span></div></div>';
   
   container.appendChild(group);
   scrollToBottom();
 }
 
-// Show typing animation then reply
 async function showTypingThenReply(actionText) {
   addUserMessage(actionText);
   isTyping = true;
   document.getElementById('sendBtn').disabled = true;
   
-  // Add typing indicator
   const container = document.getElementById('messagesContainer');
   const typingRow = document.createElement('div');
   typingRow.className = 'message-row agent';
   typingRow.id = 'typingRow';
-  typingRow.innerHTML = `<div class="msg-avatar">🤖</div><div class="msg-body"><div class="msg-text"><div class="typing-indicator"><span></span><span></span><span></span></div></div></div>`;
+  typingRow.innerHTML = '<div class="msg-avatar">🤖</div><div class="msg-body"><div class="msg-text"><div class="typing-indicator"><span></span><span></span><span></span></div></div></div>';
   container.appendChild(typingRow);
   scrollToBottom();
   
-  // First try: connect to Flask API
   try {
     const resp = await fetch(API_URL, {
       method: 'POST',
@@ -743,23 +757,21 @@ async function showTypingThenReply(actionText) {
       const replyTime = data.response_time_ms || 0;
       addAgentReply(data.reply, { time: (replyTime / 1000).toFixed(1) });
     } else {
-      throw new Error("Non-200 status");
+      throw new Error("Non-200");
     }
   } catch (err) {
-    // FALLBACK: Use local keyword matching engine
     console.log("API not available, using local demo mode...");
     const reply = getLocalReply(actionText, currentLang);
     if (reply) {
       removeTyping();
       addAgentReply(reply, { time: "0.5" });
     } else {
-      // Ultimate fallback
       const fallbacks = {
         zh: "感谢您的咨询！😊\n\n我是 Luna，您的专属购物助手。\n\n我可以帮助您：\n• 📦 查询订单物流\n• 🔄 退换货处理\n• 👗 尺码推荐\n• 🎉 最新促销活动\n\n请问有什么可以帮您的呢？",
-        en: "Thank you for your message! 😊\n\nI am Luna, your virtual shopping assistant at TrendyWear.\n\nI can help you with:\n• 📦 Tracking your order\n• 🔄 Returns & exchanges\n• 👕 Size recommendations\n• 🎉 Current promotions\n\nCould you be more specific? I am here to help!",
+        en: "Thank you for your message! 😊\n\nI am Luna, your virtual shopping assistant.\n\nI can help you with:\n• 📦 Tracking your order\n• 🔄 Returns & exchanges\n• 👕 Size recommendations\n• 🎉 Current promotions\n\nCould you be more specific? I am here to help!",
         de: "Vielen Dank für Ihre Nachricht! 😊\n\nIch bin Luna, Ihr virtueller Einkaufsassistent.\n\nIch kann Ihnen helfen bei:\n• 📦 Sendungsverfolgung\n• 🔄 Rückgabe & Umtausch\n• 👕 Größempfehlungen\n• 🎉 Aktuelle Angebote\n\nKönnen Sie genauer sein? Ich helfe gerne!",
-        ja: "お問い合わせありがとうございます！😊\n\nLuna、TrendyWearの仮想ショッピングアシスタントです。\n\nお手伝いできます：\n• 📦 配送追跡\n• 🔄 返品・交換\n• 👕 サイズ推薦\n• 🎉 最新のプロモーション\n\nもう少し詳しくお知らせください！",
-        ar: "شكراً لاستفسارك! 😊\n\nأنا لونا، مساعد التسوق الافتراضي في TrendyWear.\n\nيمكنني مساعدتك في:\n• 📦 تتبع الطلب\n• 🔄 الإرجاع والتبادل\n• 👕 توصيات المقاسات\n• 🎉 العروض الحالية\n\nهل يمكنك أن تكون أكثر تحديداً؟ أنا هنا للمساعدة!"
+        ja: "お問い合わせありがとうございます！😊\n\nLuna、TrendyWearの仮想アシスタントです。\n\nお手伝いできます：\n• 📦 配送追跡\n• 🔄 返品・交換\n• 👕 サイズ推薦\n• 🎉 最新のプロモーション\n\nもう少し詳しくお知らせください！",
+        ar: "شكراً لاستفسارك! 😊\n\nأنا لونا، مساعد التسوق الافتراضي.\n\nيمكنني مساعدتك في:\n• 📦 تتبع الطلب\n• 🔄 الإرجاع والتبادل\n• 👕 توصيات المقاسات\n• 🎉 العروض الحالية\n\nهل يمكنك أن تكون أكثر تحديداً؟ أنا هنا للمساعدة!"
       };
       removeTyping();
       addAgentReply(fallbacks[currentLang] || fallbacks.zh, { time: "0.5" });
@@ -776,8 +788,6 @@ function removeTyping() {
   if (el) el.remove();
 }
 
-// ===== MAIN FUNCTIONS =====
-
 function sendMessage() {
   const input = document.getElementById('msgInput');
   const text = input.value.trim();
@@ -787,47 +797,48 @@ function sendMessage() {
 }
 
 function sendAction(text) {
-  // Immediately scroll to bottom to see response
   showTypingThenReply(text);
 }
 
 function setLang(btn, lang) {
   currentLang = lang;
-  document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
+  renderAllDynamicContent(lang);
   
-  const placeholders = { zh:'输入您的问题...', en:'Type your message...', de:'Nachricht eingeben...', ja:'メッセージを入力...', ar:'اكتب رسالتك...' };
-  document.getElementById('msgInput').placeholder = placeholders[lang] || placeholders['zh'];
-  
-  const langNames = { zh:'中文', en:'English', de:'Deutsch', ja:'日本語', ar:'العربية' };
-  document.getElementById('currentLangLabel').textContent = langNames[lang] || langNames.zh;
-}
-
-// ===== INIT: Welcome message =====
-window.addEventListener('DOMContentLoaded', () => {
-  const container = document.getElementById('messagesContainer');
-  container.innerHTML = '';
-  
-  // Demo mode banner
-  const demoBanner = document.createElement('div');
-  demoBanner.className = 'demo-mode-banner';
-  demoBanner.innerHTML = '⚡ 离线演示模式 — 自动关键词匹配回复（不依赖后端服务）';
-  container.appendChild(demoBanner);
-  
-  // Welcome messages by language
+  // Update welcome message for the new language
   const welcomeMessages = {
     zh: '您好！欢迎来到 TrendyWear 👋\n\n我是您的专属购物助手 Luna，可以帮您：\n\n📦 查询物流状态\n🔄 退换货政策\n👗 尺码推荐\n🎉 最新优惠\n\n请问有什么可以帮您的？😊',
     en: 'Welcome to TrendyWear! 👋\n\nI am your shopping assistant Luna, here to help you with:\n\n📦 Track your order\n🔄 Return & Exchange policy\n👕 Size recommendations\n🎉 Latest deals\n\nHow can I assist you? 😊',
     de: 'Willkommen bei TrendyWear! 👋\n\nIch bin Ihr Einkaufsassistent Luna und helfe Ihnen gerne:\n\n📦 Sendungsverfolgung\n🔄 Rückgabe & Umtausch\n👕 Größempfehlungen\n🎉 Aktuelle Angebote\n\nWie kann ich Ihnen helfen? 😊',
     ja: 'TrendyWearへようこそ！👋\n\nお買い物のアシスタントLunaです。以下をご案内できます：\n\n📦 配送追跡\n🔄 返品・交換\n👕 サイズガイド\n🎉 最新キャンペーン\n\n何かお手伝いできることはありますか？😊',
-    ar: '!مرحبا بك في TrendyWear 👋\n\nأنا لونا، مساعد التسوق الخاص بك ومساعدة:\n\n📦 تتبع الطلب\n🔄 سياسة الإرجاع والتبادل\n👕 توصيات المقاسات\n🎉 أحدث العروض\n\nكيف يمكنني مساعدتك؟ 😊'
+    ar: 'مرحبا بك في TrendyWear! 👋\n\nأنا لونا، مساعد التسوق الخاص بك ومساعدة:\n\n📦 تتبع الطلب\n🔄 سياسة الإرجاع والتبادل\n👕 توصيات المقاسات\n🎉 أحدث العروض\n\nكيف يمكنني مساعدتك؟ 😊'
   };
   
-  const langMap = { zh:'zh', en:'en', de:'de', ja:'ja', ar:'ar' };
-  addSysMessage(`💬 会话开始 · 语言: ${document.querySelector('.lang-btn.active')?.textContent || '中文'}`);
-  addAgentReply(welcomeMessages[langMap[currentLang]] || welcomeMessages.zh, {});
-});
+  const langNames = { zh:'中文', en:'English', de:'Deutsch', ja:'日本語', ar:'العربية' };
+  const lc = document.getElementById('currentLangLabel');
+  if (lc) lc.textContent = langNames[lang];
+  
+  // Clear messages and show new welcome
+  const container = document.getElementById('messagesContainer');
+  container.innerHTML = '';
+  addAgentReply(welcomeMessages[lang] || welcomeMessages.zh, {});
+}
 
+// ===== INIT: Welcome message =====
+window.addEventListener('DOMContentLoaded', () => {
+  // Start with full UI populated by dynamic content system
+  renderAllDynamicContent(currentLang);
+  
+  // Welcome messages
+  const welcomeMessages = {
+    zh: '您好！欢迎来到 TrendyWear 👋\n\n我是您的专属购物助手 Luna，可以帮您：\n\n📦 查询物流状态\n🔄 退换货政策\n👗 尺码推荐\n🎉 最新优惠\n\n请问有什么可以帮您的？😊',
+    en: 'Welcome to TrendyWear! 👋\n\nI am your shopping assistant Luna, here to help you with:\n\n📦 Track your order\n🔄 Return & Exchange policy\n👕 Size recommendations\n🎉 Latest deals\n\nHow can I assist you? 😊',
+    de: 'Willkommen bei TrendyWear! 👋\n\nIch bin Ihr Einkaufsassistent Luna und helfe Ihnen gerne:\n\n📦 Sendungsverfolgung\n🔄 Rückgabe & Umtausch\n👕 Größempfehlungen\n🎉 Aktuelle Angebote\n\nWie kann ich Ihnen helfen? 😊',
+    ja: 'TrendyWearへようこそ！👋\n\nお買い物のアシスタントLunaです。以下をご案内できます：\n\n📦 配送追跡\n🔄 返品・交換\n👕 サイズガイド\n🎉 最新キャンペーン\n\n何かお手伝いできることはありますか？😊',
+    ar: 'مرحبا بك في TrendyWear! 👋\n\nأنا لونا، مساعد التسوق الخاص بك ومساعدة:\n\n📦 تتبع الطلب\n🔄 سياسة الإرجاع والتبادل\n👕 توصيات المقاسات\n🎉 أحدث العروض\n\nكيف يمكنني مساعدتك؟ 😊'
+  };
+  
+  addAgentReply(welcomeMessages[currentLang] || welcomeMessages.zh, {});
+});
 </script>
 </div>
 <!-- end main-layout -->
