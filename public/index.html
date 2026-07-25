@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CrossBot AI - Offline Demo</title>
+<style>
+:root {
+  --bg-dark: #0f1117;
+  --panel-bg: #161824;
+  --card-bg: #1c1f30;
+  --input-bg: #22253a;
+  --border: #2a2d42;
+  --primary: #6366f1;
+  --primary-hover: #818cf8;
+  --accent: #a855f7;
+  --success: #22c55e;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --text-primary: #f1f5f9;
+  --text-secondary: #a0a4b8;
+  --text-muted: #6b7084;
+  --user-bubble: linear-gradient(135deg, #6366f1, #8b5cf6);
+  --agent-bubble: #1c1f30;
+  --shadow-card: 0 4px 20px rgba(0,0,0,0.25);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--bg-dark);
+  color: var(--text-primary);
+  height: 100vh;
+  overflow: hidden;
+}
+
+.main-layout {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+}
+
+.sidebar {
+  width: 300px;
+  background: var(--panel-bg);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  z-index: 20;
+}
+
+.sidebar-top {
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.brand-icon {
+  width: 36px; height: 36px;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+}
+.brand-name h2 { font-size: 14px; font-weight: 700; line-height: 1.3; }
+.brand-name p { font-size: 10px; color: var(--text-muted); }
+
+.sidebar-stats {
+  display: grid; grid-template-columns: repeat(3,1fr); gap: 6px;
+  padding: 12px 20px; border-bottom: 1px solid var(--border);
+}
+.stat-item { text-align: center; padding: 6px 0; }
+.stat-value { font-size: 15px; font-weight: 700; color: var(--primary-hover); }
+.stat-label { font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+
+.conv-section-title {
+  font-size: 10px; color: var(--text-muted); text-transform: uppercase;
+  letter-spacing: 1px; padding: 10px 20px 6px; font-weight: 600;
+}
+
+.conv-list { flex: 1; overflow-y: auto; padding: 2px 8px; }
+
+.conv-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px; border-radius: 10px; cursor: pointer;
+  transition: all 0.2s; margin-bottom: 2px;
+}
+.conv-item:hover { background: rgba(99,102,241,0.08); }
+.conv-item.active { background: rgba(99,102,241,0.15); border: 1px solid rgba(99,102,241,0.25); }
+
+.conv-avatar {
+  width: 34px; height: 34px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700; flex-shrink: 0;
+}
+
+.conv-info { flex: 1; min-width: 0; }
+.conv-name { font-size: 12px; font-weight: 600; margin-bottom: 2px; }
+.conv-preview { font-size: 10px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.conv-meta { text-align: right; flex-shrink: 0; }
+.conv-time { font-size: 9px; color: var(--text-muted); }
+
+.online-dot {
+  width: 7px; height: 7px; background: var(--success);
+  border-radius: 50%; display: block; margin: 3px auto 0;
+  animation: pulse-dot 2s infinite;
+}
+@keyframes pulse-dot {
+  0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,0.4)}
+  50%{box-shadow:0 0 0 4px rgba(34,197,94,0)}
+}
+
+.sidebar-footer {
+  padding: 12px 20px;
+  border-top: 1px solid var(--border);
+}
+
+.stats-row {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 10px; color: var(--text-muted); margin-bottom: 8px;
+}
+
+.lang-toggle {
+  display: flex; gap: 4px; flex-wrap: wrap;
+}
+
+.lang-btn {
+  padding: 3px 8px; border-radius: 6px; border: 1px solid var(--border);
+  background: transparent; color: var(--text-secondary); font-size: 10px;
+  cursor: pointer; transition: all 0.2s;
+}
+.lang-btn:hover { background: rgba(99,102,241,0.1); }
+.lang-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+/* ===== MAIN CHAT AREA ===== */
+.chat-area {
+  flex: 1; display: flex; flex-direction: column;
+  background: var(--bg-dark); z-index: 10; position: relative;
+}
+
+.chat-header {
+  padding: 16px 24px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--panel-bg);
+}
+
+.chat-title h1 {
+  font-size: 16px; font-weight: 600; margin-bottom: 2px;
+}
+.chat-title span {
+  font-size: 11px; color: var(--text-muted);
+}
+
+.header-actions {
+  display: flex; gap: 8px; align-items: center;
+}
+
+.live-badge {
+  padding: 4px 10px; border-radius: 20px; font-size: 10px;
+  font-weight: 600; display: flex; align-items: center; gap: 4px;
+}
+
+.badge-online {
+  background: rgba(34,197,94,0.15); color: var(--success);
+}
+
+.badge-online::before {
+  content: ''; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--success);
+}
+
+.offline-badge {
+  background: rgba(245,158,11,0.15); color: var(--warning);
+}
+
+.offline-badge::before {
+  content: ''; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--warning);
+}
+
+/* Messages container */
+.messages-container {
+  flex: 1; overflow-y: auto; padding: 20px 24px;
+  scroll-behavior: smooth;
+}
+
+.message-row {
+  display: flex; gap: 10px; margin-bottom: 16px;
+  max-width: 75%;
+  animation: fadeIn 0.3s ease;
+}
+@keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+.message-row.agent { align-self: flex-start; }
+.message-row.user { margin-left: auto; flex-direction: row-reverse; }
+
+.msg-avatar {
+  width: 34px; height: 34px; border-radius: 50%;
+  background: var(--primary);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; flex-shrink: 0; margin-top: 2px;
+}
+.msg-avatar.user-avatar { background: var(--accent); }
+
+.msg-body {
+  background: var(--agent-bubble);
+  border-radius: 12px; padding: 12px 14px;
+  border: 1px solid var(--border);
+  max-width: 100%;
+  word-break: break-word;
+}
+
+.message-row.user .msg-body {
+  background: var(--user-bubble);
+  border: none;
+}
+
+.msg-text { font-size: 13px; line-height: 1.6; color: var(--text-primary); }
+
+.msg-footer {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-top: 8px; padding-top: 6px; border-top: 1px solid rgba(255,255,255,0.05);
+  font-size: 10px; color: var(--text-muted);
+}
+
+.message-row.user .msg-footer { border-top-color: rgba(255,255,255,0.1); }
+
+.msg-sender { font-weight: 500; }
+.msg-time { opacity: 0.7; }
+.msg-you { color: rgba(255,255,255,0.7); }
+
+.feedback-bar {
+  display: flex; gap: 6px; margin-top: 8px;
+}
+
+.fb-btn {
+  padding: 3px 8px; border-radius: 6px; border: 1px solid var(--border);
+  background: transparent; color: var(--text-secondary); font-size: 11px;
+  cursor: pointer; transition: all 0.2s; font-weight: 500;
+}
+.fb-btn.ok:hover { background: rgba(34,197,94,0.15); border-color: var(--success); }
+.fb-btn.bad:hover { background: rgba(239,68,68,0.15); border-color: var(--danger); }
+
+.typing-indicator span {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--text-muted); display: inline-block;
+  animation: bounce 1.4s infinite both; margin: 0 1px;
+}
+.typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+.typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes bounce {
+  0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+  40% { transform: scale(1); opacity: 1; }
+}
+
+.sys-msg {
+  text-align: center; margin: 20px 0;
+  font-size: 11px; color: var(--text-muted);
+  position: relative;
+}
+.sys-msg::before, .sys-msg::after {
+  content: ''; position: absolute; top: 50%;
+  width: calc(50% - 100px); height: 1px;
+  background: var(--border);
+}
+.sys-msg::before { left: 0; }
+.sys-msg::after { right: 0; }
+
+/* Input area */
+.input-area {
+  padding: 16px 24px; border-top: 1px solid var(--border);
+  background: var(--panel-bg);
+}
+
+.quick-actions {
+  display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap;
+}
+
+.action-btn {
+  padding: 6px 12px; border-radius: 20px;
+  border: 1px solid var(--border); background: var(--card-bg);
+  color: var(--text-secondary); font-size: 11px; cursor: pointer;
+  transition: all 0.2s; white-space: nowrap;
+}
+.action-btn:hover {
+  border-color: var(--primary); color: var(--primary);
+  background: rgba(99,102,241,0.1);
+}
+
+.input-wrapper {
+  display: flex; gap: 8px; align-items: stretch;
+}
+
+#msgInput {
+  flex: 1; padding: 12px 16px; border-radius: 12px;
+  border: 1px solid var(--border); background: var(--input-bg);
+  color: var(--text-primary); font-size: 13px;
+  outline: none; transition: all 0.2s;
+  resize: none; min-height: 44px; max-height: 120px;
+  font-family: inherit;
+}
+#msgInput:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(99,102,241,0.15); }
+#msgInput::placeholder { color: var(--text-muted); }
+
+#sendBtn {
+  padding: 0 20px; border-radius: 12px;
+  background: var(--primary); color: white; border: none;
+  font-weight: 600; cursor: pointer; transition: all 0.2s;
+  display: flex; align-items: center; justify-content: center;
+  min-width: 80px;
+}
+#sendBtn:hover { background: var(--primary-hover); }
+#sendBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.transfer-btn {
+  margin-top: 10px; padding: 8px 16px; border-radius: 10px;
+  border: 1px dashed var(--text-muted); background: transparent;
+  color: var(--text-muted); font-size: 11px; cursor: pointer;
+  transition: all 0.2s;
+  display: block; width: 100%; text-align: center;
+}
+.transfer-btn:hover {
+  border-color: var(--primary); color: var(--primary);
+  background: rgba(99,102,241,0.05);
+}
+
+/* Welcome screen */
+.welcome-container {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; height: 100%; padding: 40px;
+  text-align: center; background: radial-gradient(circle at center, rgba(99,102,241,0.05) 0%, transparent 60%);
+}
+
+.welcome-icon {
+  width: 80px; height: 80px; border-radius: 24px;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 36px; margin-bottom: 24px;
+  box-shadow: 0 8px 30px rgba(99,102,241,0.3);
+}
+
+.welcome-title {
+  font-size: 24px; font-weight: 700; margin-bottom: 8px;
+}
+
+.welcome-subtitle {
+  font-size: 14px; color: var(--text-muted); max-width: 400px; line-height: 1.6;
+}
+
+.feature-cards {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 12px; margin-top: 32px; width: 100%; max-width: 600px;
+}
+
+.feature-card {
+  background: var(--panel-bg); border: 1px solid var(--border);
+  border-radius: 12px; padding: 16px; text-align: center;
+  cursor: pointer; transition: all 0.2s;
+}
+.feature-card:hover { border-color: var(--primary); transform: translateY(-2px); }
+.feature-card-icon { font-size: 24px; margin-bottom: 8px; }
+.feature-card-title { font-size: 12px; font-weight: 600; margin-bottom: 2px; }
+.feature-card-desc { font-size: 10px; color: var(--text-muted); }
+
+/* Demo mode indicator */
+.demo-mode-banner {
+  background: rgba(245,158,11,0.1);
+  border: 1px solid rgba(245,158,11,0.2);
+  border-radius: 8px; padding: 8px 16px;
+  text-align: center; font-size: 12px; color: var(--warning);
+  margin-bottom: 12px;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+/* RTL support */
+[dir="rtl"] { direction: rtl; text-align: right; }
+[dir="rtl"] .conv-meta { text-align: left; }
+[dir="rtl"] .sidebar { border-right: none; border-left: 1px solid var(--border); }
+[dir="rtl"] .chat-area .conv-list { padding: 2px 8px 2px 24px; }
+
+@media (max-width: 768px) {
+  .main-layout { flex-direction: column; }
+  .sidebar { width: 100%; height: auto; max-height: 200px; }
+  .feature-cards { grid-template-columns: repeat(2, 1fr); }
+  .message-row { max-width: 90%; }
+}
+</style>
+</head>
+<body>
+
+<div class="main-layout">
+
+<!-- Sidebar -->
+<div class="sidebar">
+  <div class="sidebar-top">
+    <div class="brand">
+      <div class="brand-icon">🤖</div>
+      <div class="brand-name">
+        <h2>CrossBot AI</h2>
+        <p>跨境电商智能客服 Agent</p>
+      </div>
+    </div>
+  </div>
+  
+  <div class="sidebar-stats">
+    <div class="stat-item">
+      <div class="stat-value">24/7</div>
+      <div class="stat-label">可用性</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-value">&lt;1s</div>
+      <div class="stat-label">响应速度</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-value">5</div>
+      <div class="stat-label">语言</div>
+    </div>
+  </div>
+  
+  <div class="conv-section-title">快速开始</div>
+  <div class="conv-list" id="convList">
+    <div class="conv-item active" onclick="sendAction('📦 查询物流状态')">
+      <div class="conv-avatar" style="background: var(--success);">📦</div>
+      <div class="conv-info">
+        <div class="conv-name">物流查询</div>
+        <div class="conv-preview">实时追踪包裹位置...</div>
+      </div>
+      <div class="conv-meta"><div class="conv-time">热门</div></div>
+    </div>
+    <div class="conv-item" onclick="sendAction('🔄 退换货政策')">
+      <div class="conv-avatar" style="background: var(--warning);">🔄</div>
+      <div class="conv-info">
+        <div class="conv-name">退换货</div>
+        <div class="conv-preview">无忧保障服务...</div>
+      </div>
+      <div class="conv-meta"><div class="conv-time">便捷</div></div>
+    </div>
+    <div class="conv-item" onclick="sendAction('👕 尺码推荐')">
+      <div class="conv-avatar" style="background: var(--accent);">👕</div>
+      <div class="conv-info">
+        <div class="conv-name">尺码推荐</div>
+        <div class="conv-preview">精准匹配您的身材...</div>
+      </div>
+      <div class="conv-meta"><div class="conv-time">智能</div></div>
+    </div>
+    <div class="conv-item" onclick="sendAction('🎉 促销活动')">
+      <div class="conv-avatar" style="background: var(--danger);">🎉</div>
+      <div class="conv-info">
+        <div class="conv-name">优惠活动</div>
+        <div class="conv-preview">限时折扣来袭...</div>
+      </div>
+      <div class="conv-meta"><div class="conv-time">火爆</div></div>
+    </div>
+  </div>
+  
+  <div class="sidebar-footer">
+    <div class="stats-row">
+      <span>当前语言:</span>
+      <span id="currentLangLabel">中文</span>
+    </div>
+    <div class="lang-toggle">
+      <button class="lang-btn active" onclick="setLang(this, 'zh')">中文</button>
+      <button class="lang-btn" onclick="setLang(this, 'en')">EN</button>
+      <button class="lang-btn" onclick="setLang(this, 'de')">DE</button>
+      <button class="lang-btn" onclick="setLang(this, 'ja')">JA</button>
+      <button class="lang-btn" onclick="setLang(this, 'ar')">AR</button>
+    </div>
+  </div>
+</div>
+
+<!-- Chat Area -->
+<div class="chat-area">
+  <div class="chat-header">
+    <div class="chat-title">
+      <h1>💬 对话窗口</h1>
+      <span>TrendyWear 全球电商</span>
+    </div>
+    <div class="header-actions">
+      <span id="apiStatusBadge" class="live-badge badge-online">实时连接</span>
+    </div>
+  </div>
+  
+  <div class="messages-container" id="messagesContainer">
+    <div class="demo-mode-banner" style="background:rgba(34,197,94,0.1);border-color:rgba(34,197,94,0.2);color:#22c55e;">🚀 AI 智能客服演示 · 支持中/英/德/日/阿五语</div>
+  </div>
+  
+  <div class="input-area">
+    <div class="quick-actions">
+      <button class="action-btn" onclick="sendAction('我想查询订单物流')">📦 物流查询</button>
+      <button class="action-btn" onclick="sendAction('我要退货')">🔄 退换货</button>
+      <button class="action-btn" onclick="sendAction('帮我推荐尺码')">👕 尺码推荐</button>
+      <button class="action-btn" onclick="sendAction('有什么促销活动')">🎉 优惠活动</button>
+      <button class="action-btn" onclick="sendAction('可以分期吗')">💳 支付方式</button>
+      <button class="action-btn" onclick="sendAction('多久能到货')">📅 配送时间</button>
+    </div>
+    
+    <div class="input-wrapper">
+      <textarea id="msgInput" placeholder="输入您的问题..." rows="1"></textarea>
+      <button id="sendBtn" onclick="sendMessage()">发送</button>
+    </div>
+    
+    <button class="transfer-btn" onclick="alert('正在为您转接人工客服...\\n预计等待时间: ~2分钟\\n\\n（此为Demo演示）')">🎧 转接人工客服</button>
+  </div>
+</div>
+
+<script>
+const API_URL = "/api/chat";
+let isTyping = false;
+let currentLang = 'zh';
+
+// ============================================
+// LOCAL KEYWORD MATCHING ENGINE (offline mode)
+// ============================================
+function getLocalReply(message, lang) {
+  const msg_lower = message.toLowerCase();
+  const is_english = /[abcdefghijklmnopqrstuvwxyzeordertrackingreturnshipmentshippingdeliverypromotiondiscountsizing]/.test(msg_lower);
+  
+  // Scoring system
+  const categories = {
+    "物流查询": { weight: 10, cn: ["物流","快递","发货","到货","几天到","运单","包裹","tracking"], en: ["order","track","where is","shipping","delivery","package","transit"] },
+    "退换货政策": { weight: 10, cn: ["退货","退款","换货","不满意","质量问题","exchange"], en: ["return","refund","exchange","cancel","defective","damaged"] },
+    "尺码推荐": { weight: 8, cn: ["尺码","size","大号","小号","合身","偏大","偏小","身材","体重","身高"], en: ["size","fit","smaller","larger","tall","short","measure"] },
+    "促销活动": { weight: 9, cn: ["优惠","打折","促销","折扣","满减"], en: ["discount","coupon","promo","sale","offer"] },
+    "支付方式": { weight: 7, cn: ["支付","付款","paypal","信用卡","支付宝","wechat"], en: ["payment","pay","paypal","credit card","visa","mastercard"] },
+    "配送时间": { weight: 9, cn: ["多久到","预计送达","运输时间","express","fast delivery","运费"], en: ["how long","when will","estimated delivery","shipping time"] },
+    "产品咨询": { weight: 6, cn: ["这个多少钱","有什么颜色","材质","面料","product","material","color"], en: ["what color","how much","material","fabric","in stock"] },
+    "发票与售后": { weight: 5, cn: ["发票","收据","保修","售后服务","warranty","receipt","invoice"], en: ["invoice","receipt","warranty","after-sales"] }
+  };
+  
+  let best_match = null;
+  let best_score = 0;
+  
+  for (const [cat_name, cat_info] of Object.entries(categories)) {
+    let score = 0;
+    for (const kw of cat_info.cn) {
+      if (msg_lower.includes(kw)) score += cat_info.weight;
+    }
+    for (const kw of cat_info.en) {
+      if (msg_lower.includes(kw)) score += Math.floor(cat_info.weight * 0.5);
+    }
+    if (score > best_score) {
+      best_score = score;
+      best_match = cat_name;
+    }
+  }
+  
+  if (!best_match) return null;
+  
+  // Templates with translations
+  const templates = {
+    "物流查询": {
+      zh: "您好！您的订单正在全力运输中 📦\n\n我们可以帮您做以下几件事：\n1️⃣ 输入运单号，实时追踪包裹位置\n2️⃣ 查看预计送达日期\n3️⃣ 如有异常主动联系您\n\n请问需要哪一项服务？",
+      en: "Your order is on its way! 📦\n\nI can help you with:\n1️⃣ Track your package by tracking number\n2️⃣ Check estimated delivery date\n3️⃣ Alert you if there are any delays\n\nWhat would you like to do?",
+      de: "Ihre Bestellung ist auf dem Weg! 📦\n\nIch kann Ihnen helfen bei:\n1️⃣ Paketverfolgung mit Sendungsnummer\n2️⃣ Geschätzte Lieferdatum prüfen\n3️⃣ Benachrichtigung bei Verzögerungen\n\nWas möchten Sie tun?",
+      ja: "ご注文は配送中です！📦\n\nお手伝いできます：\n1️⃣ 出荷番号で追跡\n2️⃣ 配達予定日を確認\n3️⃣ 遅延のアラート\n\nご希望のサービスは？",
+      ar: "طلبك في طريقه! 📦\n\nيمكنني مساعدتك في:\n1️⃣ تتبع الطرد برمز الشحن\n2️⃣ التحقق من تاريخ التسليم المتوقع\n3️⃣ التنبيه عند التأخير\n\nماذا تريد أن تفعل؟"
+    },
+    "退换货政策": {
+      zh: "🔄 **退换货无忧保障**\n\n✅ 30天无理由退货（不影响二次销售的商品）\n✅ 质量问题我们承担往返运费\n✅ 换货免邮费，优先处理\n\n退货流程：\n1. 在「我的订单」页面申请\n2. 寄回至最近海外仓\n3. 收到后5个工作日内原路退款\n\n请问您需要退货还是换货？",
+      en: "🔄 **Hassle-Free Returns**\n\n✅ 30-day no-questions return policy\n✅ Free return shipping for quality issues\n✅ Priority processing for exchanges\n\nHow to return:\n1. Apply from Your Orders page\n2. Ship to nearest warehouse\n3. Refund within 5 business days after receiving\n\nWould you like to return or exchange?",
+      de: "🔄 **Sorgenfreie Rückgabe**\n\n✅ 30-Tage-Rückgaberecht ohne Angabe von Gründen\n✅ Kostenloser Rückversand bei Qualitätsproblemen\n✅ Express-Behandlung für Umtausch\n\nRückgabeprozess:\n1. Antrag über \"Meine Bestellungen\"\n2. Zum nächstgelegenen Lager zurücksenden\n3. Erstattung innerhalb von 5 Werktagen\n\nMöchten Sie zurückgeben oder umtauschen?",
+      ja: "🔄 **簡単返品ポリシー**\n\n✅ 30日間無条件返品（二次販売可能な商品）\n✅ 品質問題の往復送料無料\n✅ 交換優先対応・送料無料\n\n返品手続き：\n1. 「マイオーダー」から申請\n2. 最寄りの倉庫へ返品\n3. 受け取り後5営業日以内に返金\n\n返品と交換、どちらですか？",
+      ar: "🔄 **إرجاع سهل بدون متاعب**\n\n✅ سياسة إرجاع 30 يوم بدون أسئلة\n✅ شحن مجاني للإرجاع عند مشاكل الجودة\n✅ معالجة أولوية للتبادل\n\nكيفية الإرجاع:\n1. طلب من صفحة طلباتك\n2. الإرسال لأقرب مستودع\n3. استرداد خلال 5 أيام عمل\n\nهل تريد الإرجاع أو التبادل؟"
+    },
+    "尺码推荐": {
+      zh: "👕 **智能尺码助手**\n\n为了给您精准推荐，请告诉我：\n• 您想购买的**具体产品名称**\n• 您的**身高和体重**（可选）\n• 平时穿什么**尺码/品牌**\n\n💡 小贴士：我们的亚洲版型通常偏小1码，建议拍大一码。",
+      en: "👕 **Smart Size Finder**\n\nTo give you the perfect recommendation, please tell me:\n• The **exact product name** you want\n• Your **height and weight** (optional)\n• What size you usually wear in other brands\n\n💡 Tip: Our Asian sizing runs 1 size small.",
+      de: "👕 **Intelligenter Größengenerator**\n\nFür eine präzise Empfehlung teilen Sie mir bitte mit:\n• Den **genauen Produktnamen**, den Sie kaufen möchten\n• Ihre **Größe und Gewicht** (optional)\n• Welche Größe Sie normalerweise bei anderen Marken tragen\n\n💡 Tipp: Unsere asiatische剪裁 fällt 1 Größe kleiner aus.",
+      ja: "👕 **スマートサイズガイド**\n\n正確な推荐のため、以下をお知らせください：\n• **商品名**\n• **身長と体重**（任意）\n• 普段着ている**サイズ/ブランド**\n\n💡 ヒント：アジアサイズは1つ小さい recommended。一つ上をおすすめします。",
+      ar: "👕 **مساعد المقاسات الذكي**\n\nللتوصية الدقيقة، أخبرني:\n• **اسم المنتج** الذي تريده\n• **طولك ووزنك** (اختياري)\n• **المقاس/العلامة** التي ترتديها عادة\n\n💡 نصيحة: المقاسات الآسيوية أصغر بمقاس واحد."
+    },
+    "促销活动": {
+      zh: "🎉 **限时优惠活动**\n\n🔥 新客专享：注册即送 ¥50 优惠券\n📦 满 ¥299 免全球运费\n🎁 关注公众号再领 ¥30\n⭐ VIP会员额外享 9折\n\n现在下单还有抽奖机会！",
+      en: "🎉 **Limited-Time Offers**\n\n🔥 New customer: Get $50 coupon on signup\n📦 Free worldwide shipping on orders over $50\n🎁 Follow our social media for extra $30\n⭐ VIP members enjoy extra 10% off\n\nAdd to cart now for a chance to win free gifts!",
+      de: "🎉 **Zeitlich begrenzte Angebote**\n\n🔥 Neukunden: Erhalten Sie $50 Gutschein\n📦 Kostenloser Versand weltweit ab $50\n🎁 Folgen Sie uns für extra $30\n⭐ VIP-Mitglieder erhalten zusätzliche 10% Rabatt\n\nJetzt bestellen für die Chance auf Gratisgeschenke!",
+      ja: "🎉 **期間限定キャンペーン**\n\n🔥 新規会員：登録で$50クーポン\n📦 $50以上で世界無料配送\n🎁 SNSフォローでさらに$30\n⭐ VIPメンバー追加10%OFF\n\n今すぐご購入でプレゼント当選チャンス！",
+      ar: "🎉 **عروض محدودة الوقت**\n\n🔥 عملاء جدد: احصل على قسيمة $50\n📦 شحن مجاني عالمي فوق $50\n🎁 تابعنا للحصول على $30 إضافي\n⭐ أعضاء VIP يحصلون على خصم إضافي 10%\n\nاطلب الآن لفرصة الفوز بهدايا مجانية!"
+    },
+    "支付方式": {
+      zh: "💳 **支持的支付方式**\n\n• PayPal / 信用卡 (Visa/MasterCard)\n• Apple Pay / Google Pay\n• 支付宝 / 微信支付\n• 分期付款（支持花呗3/6/12期）\n\n所有交易由 Stripe 加密保护，100%安全 ✅",
+      en: "💳 **Accepted Payment Methods**\n\n• PayPal / Credit Card (Visa/MasterCard)\n• Apple Pay / Google Pay\n• All major debit cards\n• Buy Now, Pay Later (Klarna/Afterpay)\n\nAll transactions secured by Stripe encryption 🔒",
+      de: "💳 **Akzeptierte Zahlungsmethoden**\n\n• PayPal / Kreditkarte (Visa/MasterCard)\n• Apple Pay / Google Pay\n• Alle gängigen Debitkarten\n• Ratenzahlung (Klarna/Afterpay)\n\nAlle Transaktionen durch Stripe-Verschlüsselung geschützt 🔒",
+      ja: "💳 **対応支払い方法**\n\n• PayPal / クレジットカード (Visa/MasterCard)\n• Apple Pay / Google Pay\n• 主要なデビットカード\n• スラッシュ払い（Klarna/Afterpay対応）\n\nすべての取引はStripe暗号化で保護されています 🔒",
+      ar: "💳 **طرق الدفع المقبولة**\n\n• PayPal / بطاقة الائتمان (Visa/MasterCard)\n• Apple Pay / Google Pay\n• جميع بطاقات الخصم الرئيسية\n• اشترِ الآن وادفع لاحقاُ (Klarna/Afterpay)\n\nجميع المعاملات محمية بتشفير Stripe 🔒"
+    },
+    "配送时间": {
+      zh: "⏱ **全球配送时效**\n\n🇺🇸 美国/加拿大：7-12个工作日\n🇪🇺 欧洲各国：10-15个工作日\n🇬🇧 英国：12-18个工作日\n🇯🇵 日韩：5-8个工作日\n🌏 东南亚：5-10个工作日\n\n🚀 急件可选择 DHL/FedEx 特快（3-5天）",
+      en: "⏱ **Global Shipping Times**\n\n🇺🇸 USA/Canada: 7-12 business days\n🇪🇺 Europe: 10-15 business days\n🇬🇧 UK: 12-18 business days\n🇯🇵 Japan/Korea: 5-8 business days\n🌏 Southeast Asia: 5-10 business days\n\n🚀 Express available via DHL/FedEx (3-5 days)",
+      de: "⏱ **Globale Lieferzeiten**\n\n🇺🇸 USA/Kanada: 7-12 Werktage\n🇪🇺 Europa: 10-15 Werktage\n🇬🇧 Großbritannien: 12-18 Werktage\n🇯🇵 Japan/Korea: 5-8 Werktage\n🌏 Südostasien: 5-10 Werktage\n\n🚀 Express per DHL/FedEx verfügbar (3-5 Tage)",
+      ja: "⏱ **国際配送時間**\n\n🇺🇸 米国/カナダ：7-12営業日\n🇪🇺 欧州：10-15営業日\n🇬🇧 イギリス：12-18営業日\n🇯🇵 日本/韓国：5-8営業日\n🌏 東南アジア：5-10営業日\n\n🚀 DHL/FedExエクスプレスも利用可能（3-5日）",
+      ar: "⏱ **أوقات الشحن العالمية**\n\n🇺🇸 الولايات المتحدة/كندا: 7-12 يوم عمل\n🇪🇺 أوروبا: 10-15 يوم عمل\n🇬🇧 بريطانيا: 12-18 يوم عمل\n🇯🇵 اليابان/كوريا: 5-8 أيام عمل\n🌏 جنوب شرق آسيا: 5-10 أيام عمل\n\n🚀 تعبير متاح عبر DHL/FedEx (3-5 أيام)"
+    },
+    "产品咨询": {
+      zh: "🛍️ **关于产品您的问题**\n\n请告诉我您感兴趣的产品名称，我可以帮您查询：\n• 库存状态和可选颜色/尺寸\n• 材质和洗涤说明\n• 同类商品对比推荐\n• 真实买家评价摘要\n\n直接发产品名给我即可！",
+      en: "🛍️ **Product Inquiry**\n\nTell me the product name and I can check:\n• Stock status & available colors/sizes\n• Material details & care instructions\n• Similar product recommendations\n• Summary of real buyer reviews\n\nJust send me the product name!",
+      de: "🛍️ **Produktanfrage**\n\nSagen Sie mir den Produktname und ich kann prüfen:\n• Lagerstatus & verfügbare Farben/Größen\n• Materialdetails & Pflegehinweise\n• Ähnliche Produktempfehlungen\n• Zusammenfassung echter Käuferbewertungen\n\nSchicken Sie mir einfach den Produktnamen!",
+      ja: "🛍️ **製品についてのお問い合わせ**\n\n製品名を教えていただければ確認できます：\n• 在庫状況と利用可能なカラー/サイズ\n• 素材詳細とケア手順書\n• 類似製品のおすすめ\n• 実際の購入者のレビュー概要\n\n製品名を送ってください！",
+      ar: "🛍️ **استفسار المنتج**\n\nأخبرني باسم المنتج وسأتحقق من:\n• حالة المخزون والألوان/المقاسات المتاحة\n• تفاصيل المواد وإرشادات العناية\n• توصيات منتجات مماثلة\n• ملخص مراجعات المشترين الحقيقيين\n\nأرسل لي اسم المنتج فقط!"
+    },
+    "发票与售后": {
+      zh: "📄 **发票与售后政策**\n\n🧾 电子发票：下单时可申请，自动发送至邮箱\n🔧 质保期：服装1年/电子产品2年\n📞 售后服务：在线客服工作日 9:00-22:00\n\n售后问题请提供：订单号 + 问题描述 + 照片/视频",
+      en: "📄 **Invoices & After-Sales**\n\n🧾 E-invoice: Request at checkout, sent to your email\n🔧 Warranty: 1 year for apparel / 2 years for electronics\n📞 Support: Available Mon-Sun 9am-10pm\n\nFor after-sales, please provide: Order # + issue description + photo/video",
+      de: "📄 **Rechnungen & Kundendienst**\n\n🧾 Elektronische Rechnung: Bei der Bestellung anfordern\n🔧 Garantie: 1 Jahr für Bekleidung / 2 Jahre für Elektronik\n📞 Support: Mo-So 9-22 Uhr\n\nFür Kundendienst bitte angeben: Bestellnr. + Problembeschreibung + Foto/Video",
+      ja: "📄 **請求書とアフターサービス**\n\n🧾電子請求書：チェックアウト時にリクエスト\n🔧保証：衣類1年/電子的2年\n📞サポート：月-日 9:00-22:00\n\nアフターサービスにはご注文番号+説明+写真/動画を記載してください。",
+      ar: "📄 **الفواتير وخدمة ما بعد البيع**\n\n🧾 فاتورة إلكترونية: طلب عند الدفع\n🔧 ضمان: سنة واحدة للملابس / سنتان للإلكترونيات\n📞 دعم: متاح من الاثنين للأحد 9ص-10م\n\nلمشاكل خدمة ما بعد البيع، يرجى تقديم: رقم الطلب + وصف المشكلة + صورة/فيديو"
+    }
+  };
+  
+  const template = templates[best_match];
+  if (template) {
+    return template[lang] || template[is_english ? "en" : "zh"];
+  }
+  return null;
+}
+
+// ============================================
+// MESSAGE RENDERING
+// ============================================
+
+function getTime() {
+  return new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+}
+
+function scrollToBottom() {
+  const c = document.getElementById('messagesContainer');
+  setTimeout(() => c.scrollTo({ top: c.scrollHeight, behavior: 'smooth' }), 80);
+}
+
+// Add a system message
+function addSysMessage(text) {
+  const div = document.createElement('div');
+  div.className = 'sys-msg';
+  div.textContent = text;
+  document.getElementById('messagesContainer').appendChild(div);
+  scrollToBottom();
+}
+
+// Add an agent message with full HTML support (with RTL support for Arabic)
+function addAgentReply(content, extra = {}) {
+  const container = document.getElementById('messagesContainer');
+  const group = document.createElement('div');
+  group.className = 'message-row agent';
+  
+  // Process content: convert markdown bold, handle newlines, detect RTL
+  let processed = content
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\n/g, '<br>');
+  
+  // Detect if Arabic (RTL)
+  const isRTL = currentLang === 'ar' || /[\u0600-\u06FF]/.test(content);
+  group.style.direction = isRTL ? 'rtl' : 'ltr';
+  if (isRTL) {
+    group.style.textAlign = 'right';
+  }
+  
+  const btnLabels = {
+    zh: {ok:'👍 有帮助', bad:'👎 无帮助', marked_ok:'已标记 👍', marked_bad:'已标记 👎'},
+    en: {ok:'👍 Helpful', bad:'👎 Unhelpful', marked_ok:'Marked 👍', marked_bad:'Marked 👎'},
+    de: {ok:'👍 Hilfreich', bad:'👎 Nicht hilfreich', marked_ok:'Markiert 👍', marked_bad:'Markiert 👎'},
+    ja: {ok:'👍 役に立った', bad:'👎 役に立たなかった', marked_ok:'マーク済み 👍', marked_bad:'マーク済み 👎'},
+    ar: {ok:'👍 مفيد', bad:'👎 غير مفيد', marked_ok:'تم التحديد 👍', marked_bad:'تم التحديد 👎'}
+  };
+  const labels = btnLabels[currentLang] || btnLabels.zh;
+  
+  group.innerHTML = `
+    <div class="msg-avatar">🤖</div>
+    <div class="msg-body">
+      <div class="msg-text">${processed}</div>
+      <div class="feedback-bar">
+        <button class="fb-btn ok" onclick="this.style.background='rgba(34,197,94,.15)';this.style.borderColor='#22c55e';this.textContent='${labels.marked_ok}'">👍 ${labels.ok}</button>
+        <button class="fb-btn bad" onclick="this.style.background='rgba(239,68,68,.15)';this.style.borderColor='#ef4444';this.textContent='${labels.marked_bad}'">👎 ${labels.bad}</button>
+      </div>
+      <div class="msg-footer">
+        <span class="msg-sender msg-agent">Luna (AI)</span>
+        <span class="msg-time">${getTime()}${extra.time ? ' · ⏱ '+extra.time+'s' : ''}</span>
+      </div>
+    </div>`;
+  
+  container.appendChild(group);
+  scrollToBottom();
+}
+
+// Add a user message
+function addUserMessage(text) {
+  const container = document.getElementById('messagesContainer');
+  const group = document.createElement('div');
+  group.className = 'message-row user';
+  
+  // Detect RTL for Arabic
+  const isRTL = currentLang === 'ar' || /[\u0600-\u06FF]/.test(text);
+  group.style.direction = isRTL ? 'rtl' : 'ltr';
+  
+  group.innerHTML = `
+    <div class="msg-avatar">李</div>
+    <div class="msg-body">
+      <div class="msg-text">${text.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
+      <div class="msg-footer">
+        <span class="msg-time msg-you">${getTime()}</span>
+      </div>
+    </div>`;
+  
+  container.appendChild(group);
+  scrollToBottom();
+}
+
+// Show typing animation then reply
+async function showTypingThenReply(actionText) {
+  addUserMessage(actionText);
+  isTyping = true;
+  document.getElementById('sendBtn').disabled = true;
+  
+  // Add typing indicator
+  const container = document.getElementById('messagesContainer');
+  const typingRow = document.createElement('div');
+  typingRow.className = 'message-row agent';
+  typingRow.id = 'typingRow';
+  typingRow.innerHTML = `<div class="msg-avatar">🤖</div><div class="msg-body"><div class="msg-text"><div class="typing-indicator"><span></span><span></span><span></span></div></div></div>`;
+  container.appendChild(typingRow);
+  scrollToBottom();
+  
+  // First try: connect to Flask API
+  try {
+    const resp = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: actionText, lang: currentLang })
+    });
+    
+    if (resp.status === 200) {
+      const data = await resp.json();
+      removeTyping();
+      const replyTime = data.response_time_ms || 0;
+      addAgentReply(data.reply, { time: (replyTime / 1000).toFixed(1) });
+    } else {
+      throw new Error("Non-200 status");
+    }
+  } catch (err) {
+    // FALLBACK: Use local keyword matching engine
+    console.log("API not available, using local demo mode...");
+    const reply = getLocalReply(actionText, currentLang);
+    if (reply) {
+      removeTyping();
+      addAgentReply(reply, { time: "0.5" });
+    } else {
+      // Ultimate fallback
+      const fallbacks = {
+        zh: "感谢您的咨询！😊\n\n我是 Luna，您的专属购物助手。\n\n我可以帮助您：\n• 📦 查询订单物流\n• 🔄 退换货处理\n• 👗 尺码推荐\n• 🎉 最新促销活动\n\n请问有什么可以帮您的呢？",
+        en: "Thank you for your message! 😊\n\nI am Luna, your virtual shopping assistant at TrendyWear.\n\nI can help you with:\n• 📦 Tracking your order\n• 🔄 Returns & exchanges\n• 👕 Size recommendations\n• 🎉 Current promotions\n\nCould you be more specific? I am here to help!",
+        de: "Vielen Dank für Ihre Nachricht! 😊\n\nIch bin Luna, Ihr virtueller Einkaufsassistent.\n\nIch kann Ihnen helfen bei:\n• 📦 Sendungsverfolgung\n• 🔄 Rückgabe & Umtausch\n• 👕 Größempfehlungen\n• 🎉 Aktuelle Angebote\n\nKönnen Sie genauer sein? Ich helfe gerne!",
+        ja: "お問い合わせありがとうございます！😊\n\nLuna、TrendyWearの仮想ショッピングアシスタントです。\n\nお手伝いできます：\n• 📦 配送追跡\n• 🔄 返品・交換\n• 👕 サイズ推薦\n• 🎉 最新のプロモーション\n\nもう少し詳しくお知らせください！",
+        ar: "شكراً لاستفسارك! 😊\n\nأنا لونا، مساعد التسوق الافتراضي في TrendyWear.\n\nيمكنني مساعدتك في:\n• 📦 تتبع الطلب\n• 🔄 الإرجاع والتبادل\n• 👕 توصيات المقاسات\n• 🎉 العروض الحالية\n\nهل يمكنك أن تكون أكثر تحديداً؟ أنا هنا للمساعدة!"
+      };
+      removeTyping();
+      addAgentReply(fallbacks[currentLang] || fallbacks.zh, { time: "0.5" });
+    }
+  } finally {
+    isTyping = false;
+    document.getElementById('sendBtn').disabled = false;
+    document.getElementById('msgInput').focus();
+  }
+}
+
+function removeTyping() {
+  const el = document.getElementById('typingRow');
+  if (el) el.remove();
+}
+
+// ===== MAIN FUNCTIONS =====
+
+function sendMessage() {
+  const input = document.getElementById('msgInput');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  showTypingThenReply(text);
+}
+
+function sendAction(text) {
+  // Immediately scroll to bottom to see response
+  showTypingThenReply(text);
+}
+
+function setLang(btn, lang) {
+  currentLang = lang;
+  document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  
+  const placeholders = { zh:'输入您的问题...', en:'Type your message...', de:'Nachricht eingeben...', ja:'メッセージを入力...', ar:'اكتب رسالتك...' };
+  document.getElementById('msgInput').placeholder = placeholders[lang] || placeholders['zh'];
+  
+  const langNames = { zh:'中文', en:'English', de:'Deutsch', ja:'日本語', ar:'العربية' };
+  document.getElementById('currentLangLabel').textContent = langNames[lang] || langNames.zh;
+}
+
+// ===== INIT: Welcome message =====
+window.addEventListener('DOMContentLoaded', () => {
+  const container = document.getElementById('messagesContainer');
+  container.innerHTML = '';
+  
+  // Demo mode banner
+  const demoBanner = document.createElement('div');
+  demoBanner.className = 'demo-mode-banner';
+  demoBanner.innerHTML = '⚡ 离线演示模式 — 自动关键词匹配回复（不依赖后端服务）';
+  container.appendChild(demoBanner);
+  
+  // Welcome messages by language
+  const welcomeMessages = {
+    zh: '您好！欢迎来到 TrendyWear 👋\n\n我是您的专属购物助手 Luna，可以帮您：\n\n📦 查询物流状态\n🔄 退换货政策\n👗 尺码推荐\n🎉 最新优惠\n\n请问有什么可以帮您的？😊',
+    en: 'Welcome to TrendyWear! 👋\n\nI am your shopping assistant Luna, here to help you with:\n\n📦 Track your order\n🔄 Return & Exchange policy\n👕 Size recommendations\n🎉 Latest deals\n\nHow can I assist you? 😊',
+    de: 'Willkommen bei TrendyWear! 👋\n\nIch bin Ihr Einkaufsassistent Luna und helfe Ihnen gerne:\n\n📦 Sendungsverfolgung\n🔄 Rückgabe & Umtausch\n👕 Größempfehlungen\n🎉 Aktuelle Angebote\n\nWie kann ich Ihnen helfen? 😊',
+    ja: 'TrendyWearへようこそ！👋\n\nお買い物のアシスタントLunaです。以下をご案内できます：\n\n📦 配送追跡\n🔄 返品・交換\n👕 サイズガイド\n🎉 最新キャンペーン\n\n何かお手伝いできることはありますか？😊',
+    ar: '!مرحبا بك في TrendyWear 👋\n\nأنا لونا، مساعد التسوق الخاص بك ومساعدة:\n\n📦 تتبع الطلب\n🔄 سياسة الإرجاع والتبادل\n👕 توصيات المقاسات\n🎉 أحدث العروض\n\nكيف يمكنني مساعدتك؟ 😊'
+  };
+  
+  const langMap = { zh:'zh', en:'en', de:'de', ja:'ja', ar:'ar' };
+  addSysMessage(`💬 会话开始 · 语言: ${document.querySelector('.lang-btn.active')?.textContent || '中文'}`);
+  addAgentReply(welcomeMessages[langMap[currentLang]] || welcomeMessages.zh, {});
+});
+
+</script>
+</div>
+<!-- end main-layout -->
+</body>
+</html>
