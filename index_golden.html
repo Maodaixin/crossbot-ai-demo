@@ -428,15 +428,54 @@ body {
     </div>
   </div>
   
-  <div class="conv-section-title" id="quickStartTitle">快速开始</div>
-  <div class="conv-list" id="convList"></div>
+  <div class="conv-section-title">快速开始</div>
+  <div class="conv-list" id="convList">
+    <div class="conv-item active" onclick="sendAction('📦 查询物流状态')">
+      <div class="conv-avatar" style="background: var(--success);">📦</div>
+      <div class="conv-info">
+        <div class="conv-name">物流查询</div>
+        <div class="conv-preview">实时追踪包裹位置...</div>
+      </div>
+      <div class="conv-meta"><div class="conv-time">热门</div></div>
+    </div>
+    <div class="conv-item" onclick="sendAction('🔄 退换货政策')">
+      <div class="conv-avatar" style="background: var(--warning);">🔄</div>
+      <div class="conv-info">
+        <div class="conv-name">退换货</div>
+        <div class="conv-preview">无忧保障服务...</div>
+      </div>
+      <div class="conv-meta"><div class="conv-time">便捷</div></div>
+    </div>
+    <div class="conv-item" onclick="sendAction('👕 尺码推荐')">
+      <div class="conv-avatar" style="background: var(--accent);">👕</div>
+      <div class="conv-info">
+        <div class="conv-name">尺码推荐</div>
+        <div class="conv-preview">精准匹配您的身材...</div>
+      </div>
+      <div class="conv-meta"><div class="conv-time">智能</div></div>
+    </div>
+    <div class="conv-item" onclick="sendAction('🎉 促销活动')">
+      <div class="conv-avatar" style="background: var(--danger);">🎉</div>
+      <div class="conv-info">
+        <div class="conv-name">优惠活动</div>
+        <div class="conv-preview">限时折扣来袭...</div>
+      </div>
+      <div class="conv-meta"><div class="conv-time">火爆</div></div>
+    </div>
+  </div>
   
   <div class="sidebar-footer">
     <div class="stats-row">
-      <span id="langLabel">当前语言:</span>
+      <span>当前语言:</span>
       <span id="currentLangLabel">中文</span>
     </div>
-    <div class="lang-toggle" id="langToggle"></div>
+    <div class="lang-toggle">
+      <button class="lang-btn active" onclick="setLang(this, 'zh')">中文</button>
+      <button class="lang-btn" onclick="setLang(this, 'en')">EN</button>
+      <button class="lang-btn" onclick="setLang(this, 'de')">DE</button>
+      <button class="lang-btn" onclick="setLang(this, 'ja')">JA</button>
+      <button class="lang-btn" onclick="setLang(this, 'ar')">AR</button>
+    </div>
   </div>
 </div>
 
@@ -444,7 +483,7 @@ body {
 <div class="chat-area">
   <div class="chat-header">
     <div class="chat-title">
-      <h1 id="chatTitle">💬 对话窗口</h1>
+      <h1>💬 对话窗口</h1>
       <span>TrendyWear 全球电商</span>
     </div>
     <div class="header-actions">
@@ -453,23 +492,31 @@ body {
   </div>
   
   <div class="messages-container" id="messagesContainer">
-    
+    <div class="demo-mode-banner" style="background:rgba(34,197,94,0.1);border-color:rgba(34,197,94,0.2);color:#22c55e;">🚀 AI 智能客服演示 · 支持中/英/德/日/阿五语</div>
   </div>
   
   <div class="input-area">
-    <div class="quick-actions" id="shortcutActions"></div>
+    <div class="quick-actions">
+      <button class="action-btn" onclick="sendAction('我想查询订单物流')">📦 物流查询</button>
+      <button class="action-btn" onclick="sendAction('我要退货')">🔄 退换货</button>
+      <button class="action-btn" onclick="sendAction('帮我推荐尺码')">👕 尺码推荐</button>
+      <button class="action-btn" onclick="sendAction('有什么促销活动')">🎉 优惠活动</button>
+      <button class="action-btn" onclick="sendAction('可以分期吗')">💳 支付方式</button>
+      <button class="action-btn" onclick="sendAction('多久能到货')">📅 配送时间</button>
+    </div>
     
     <div class="input-wrapper">
       <textarea id="msgInput" placeholder="输入您的问题..." rows="1"></textarea>
       <button id="sendBtn" onclick="sendMessage()">发送</button>
     </div>
     
-    <button class="transfer-btn" id="transferBtn" onclick="showTransferMsg()">🎧 转接人工客服</button>
+    <button class="transfer-btn" onclick="alert('正在为您转接人工客服...\\n预计等待时间: ~2分钟\\n\\n（此为Demo演示）')">🎧 转接人工客服</button>
   </div>
 </div>
 
-
 <script>
+const API_URL = "/api/chat";
+let isTyping = false;
 let currentLang = 'zh';
 
 // ============================================
@@ -578,200 +625,7 @@ function getLocalReply(message, lang) {
 }
 
 // ============================================
-
-
-// Local keyword matching engine for offline/demo mode
-// ============================================
-// MULTI-LANGUAGE DYNAMIC CONTENT SYSTEM
-// ============================================
-
-const UI_TEXTS = {
-  zh: {
-    title: "对话窗口",
-    quickStart: "快速开始",
-    langLabel: "当前语言:",
-    sendBtn: "发送",
-    inputPlaceholder: "输入您的问题...",
-    transferBtn: "🎧 转接人工客服",
-    transferMsg: "正在为您转接人工客服...\n预计等待时间: ~2分钟\n\n（此为Demo演示）",
-    shortcuts: [
-      { label: "📦 物流查询", action: "我想查询订单物流" },
-      { label: "🔄 退换货", action: "我要退货" },
-      { label: "👕 尺码推荐", action: "帮我推荐尺码" },
-      { label: "🎉 优惠活动", action: "有什么促销活动" },
-      { label: "💳 支付方式", action: "可以分期吗" },
-      { label: "📅 配送时间", action: "多久能到货" }
-    ],
-    sidebarItems: [
-      { name: "物流查询", preview: "实时追踪包裹位置...", action: "📦 查询物流状态", color: "var(--success)", tag: "热门", active: true },
-      { name: "退换货", preview: "无忧保障服务...", action: "🔄 退换货政策", color: "var(--warning)", tag: "便捷", active: false },
-      { name: "尺码推荐", preview: "精准匹配您的身材...", action: "👕 尺码推荐", color: "var(--accent)", tag: "智能", active: false },
-      { name: "优惠活动", preview: "限时折扣来袭...", action: "🎉 促销活动", color: "var(--danger)", tag: "火爆", active: false }
-    ]
-  },
-  en: {
-    title: "Chat Window",
-    quickStart: "Quick Start",
-    langLabel: "Language:",
-    sendBtn: "Send",
-    inputPlaceholder: "Type your message...",
-    transferBtn: "🎧 Transfer to Human Agent",
-    transferMsg: "Transferring you to a human agent...\nEstimated wait: ~2 minutes\n\n(Demo mode)",
-    shortcuts: [
-      { label: "📦 Tracking", action: "I want to track my order" },
-      { label: "🔄 Returns", action: "I need to return an item" },
-      { label: "👕 Size Help", action: "Help me with sizing" },
-      { label: "🎉 Promotions", action: "What promotions are there" },
-      { label: "💳 Payment", action: "Can I pay by installments" },
-      { label: "📅 Shipping Time", action: "How long for delivery" }
-    ],
-    sidebarItems: [
-      { name: "Tracking", preview: "Track your package...", action: "📦 Track my order", color: "var(--success)", tag: "Popular", active: true },
-      { name: "Returns", preview: "Hassle-free policy...", action: "🔄 Return & Exchange", color: "var(--warning)", tag: "Easy", active: false },
-      { name: "Size Guide", preview: "Find your perfect fit...", action: "👕 Size recommendation", color: "var(--accent)", tag: "Smart", active: false },
-      { name: "Deals", preview: "Limited offers...", action: "🎉 Promotions", color: "var(--danger)", tag: "Hot", active: false }
-    ]
-  },
-  de: {
-    title: "Chat-Fenster",
-    quickStart: "Schnellstart",
-    langLabel: "Sprache:",
-    sendBtn: "Senden",
-    inputPlaceholder: "Nachricht eingeben...",
-    transferBtn: "🎧 Mit Support verbinden",
-    transferMsg: "Sie werden mit dem Support verbunden...\nWartezeit: ca. 2 Minuten\n\n(Demo-Modus)",
-    shortcuts: [
-      { label: "📦 Verfolgen", action: "Ich will meine Bestellung verfolgen" },
-      { label: "🔄 Rückgabe", action: "Ich will etwas zurückgeben" },
-      { label: "👕 Größe", action: "Helfen Sie mir bei der Größenwahl" },
-      { label: "🎉 Angebote", action: "Welche Angebote gibt es" },
-      { label: "💳 Zahlung", action: "Kann ich in Raten zahlen" },
-      { label: "📅 Versandzeit", action: "Wie lange dauert die Lieferung" }
-    ],
-    sidebarItems: [
-      { name: "Verfolgung", preview: "Paket verfolgen...", action: "📦 Verfolge mein Paket", color: "var(--success)", tag: "Beliebt", active: true },
-      { name: "Rückgabe", preview: "Sorgfreie Rückgabe...", action: "🔄 Rückgabe & Umtausch", color: "var(--warning)", tag: "Einfach", active: false },
-      { name: "Größe", preview: "Perfekte Größe finden...", action: "👕 Größempfehlung", color: "var(--accent)", tag: "Intelligent", active: false },
-      { name: "Angebote", preview: "Limitierte Angebote...", action: "🎉 Angebote", color: "var(--danger)", tag: "Heiß", active: false }
-    ]
-  },
-  ja: {
-    title: "チャットウィンドウ",
-    quickStart: "クイックスタート",
-    langLabel: "言語:",
-    sendBtn: "送信",
-    inputPlaceholder: "メッセージを入力...",
-    transferBtn: "🎧 担当者へ接続",
-    transferMsg: "担当者にご接続します...\nお待たせ時間: 約2分\n\n（デモモード）",
-    shortcuts: [
-      { label: "📦 追跡", action: "注文を追跡したい" },
-      { label: "🔄 返品", action: "返品したいです" },
-      { label: "👕 サイズ", action: "サイズを教えてほしい" },
-      { label: "🎉 キャンペーン", action: "キャンペーン情報を教えてください" },
-      { label: "💳 支払い", action: "分割払いできますか" },
-      { label: "📅 配送時間", action: "配送にどれくらい掛かりますか" }
-    ],
-    sidebarItems: [
-      { name: "追跡", preview: "荷物を追跡...", action: "📦 注文追跡", color: "var(--success)", tag: "人気", active: true },
-      { name: "返品", preview: "簡単返品...", action: "🔄 返品・交換", color: "var(--warning)", tag: "簡単", active: false },
-      { name: "サイズ", preview: "ぴったりのサイズ...", action: "👕 サイズガイド", color: "var(--accent)", tag: "スマート", active: false },
-      { name: "キャンペーン", preview: "限定キャンペーン...", action: "🎉 キャンペーン", color: "var(--danger)", tag: "注目", active: false }
-    ]
-  },
-  ar: {
-    title: "نافذة الدردشة",
-    quickStart: "البدء السريع",
-    langLabel: "اللغة:",
-    sendBtn: "إرسال",
-    inputPlaceholder: "اكتب رسالتك...",
-    transferBtn: "🎧 توصيل بالعميل",
-    transferMsg: "جاري توصيلك بمسؤول خدمة العملاء...\nوقت الانتظار المتوقع: ~٢ دقيقة\n\n(وضع العرض التجريبي)",
-    shortcuts: [
-      { label: "📦 تتبع", action: "أريد تتبع طلبي" },
-      { label: "🔄 إرجاع", action: "أريد إرجاع منتج" },
-      { label: "👕 مقاس", action: "ساعدني في اختيار المقاس" },
-      { label: "🎉 عروض", action: "ما هي العروض الحالية" },
-      { label: "💳 دفع", action: "هل يمكنني بالدفع بالتقسيط" },
-      { label: "📅 وقت التوصيل", action: "كم يستغرق التوصيل" }
-    ],
-    sidebarItems: [
-      { name: "تتبع", preview: "تتبع طردك...", action: "📦 تابع طلبي", color: "var(--success)", tag: "شائع", active: true },
-      { name: "إرجاع", preview: "سياسة إرجاع سهلة...", action: "🔄 إرجاع وتبادل", color: "var(--warning)", tag: "سهل", active: false },
-      { name: "مقاس", preview: "المقاس المثالي...", action: "👕 توصية المقاس", color: "var(--accent)", tag: "ذكي", active: false },
-      { name: "عروض", preview: "عروض محدودة...", action: "🎉 العروض", color: "var(--danger)", tag: "مهم", active: false }
-    ]
-  }
-};
-
-function renderAllDynamicContent(lang) {
-  const t = UI_TEXTS[lang] || UI_TEXTS.zh;
-  
-  const qst = document.getElementById('quickStartTitle');
-  if (qst) qst.textContent = t.quickStart;
-  
-  const ll = document.getElementById('langLabel');
-  if (ll) ll.textContent = t.langLabel;
-  
-  // Sidebar items
-  const cl = document.getElementById('convList');
-  if (cl) {
-    cl.innerHTML = '';
-    t.sidebarItems.forEach((item, i) => {
-      const activeClass = item.active ? 'active' : '';
-      const el = document.createElement('div');
-      el.className = 'conv-item ' + activeClass;
-      el.onclick = function() { sendAction(item.action); };
-      el.innerHTML = '<div class="conv-avatar" style="background: ' + item.color + ';">' + item.action.charAt(0) + '</div><div class="conv-info"><div class="conv-name">' + item.name + '</div><div class="conv-preview">' + item.preview + '</div></div><div class="conv-meta"><div class="conv-time">' + item.tag + '</div></div>';
-      cl.appendChild(el);
-    });
-  }
-  
-  // Language toggle buttons
-  const lt = document.getElementById('langToggle');
-  if (lt) {
-    lt.innerHTML = '';
-    ['zh','en','de','ja','ar'].forEach(l => {
-      const btn = document.createElement('button');
-      btn.className = 'lang-btn' + (l === lang ? ' active' : '');
-      const labels = { zh:'中文', en:'EN', de:'DE', ja:'JA', ar:'AR' };
-      btn.textContent = labels[l];
-      btn.onclick = function() { setLang(this, l); };
-      lt.appendChild(btn);
-    });
-  }
-  
-  const si = document.getElementById('msgInput');
-  if (si) si.placeholder = t.inputPlaceholder;
-  
-  const sb = document.getElementById('sendBtn');
-  if (sb) sb.textContent = t.sendBtn;
-  
-  const tb = document.getElementById('transferBtn');
-  if (tb) tb.textContent = t.transferBtn;
-  
-  // Numbered shortcut actions
-  const sa = document.getElementById('shortcutActions');
-  if (sa) {
-    sa.innerHTML = '';
-    t.shortcuts.forEach((s, i) => {
-      const btn = document.createElement('button');
-      btn.className = 'action-btn';
-      btn.onclick = function() { sendAction(s.action); };
-      btn.innerHTML = '<span class="num">' + (i+1) + '</span> ' + s.label;
-      sa.appendChild(btn);
-    });
-  }
-}
-
-function showTransferMsg() {
-  const t = UI_TEXTS[currentLang] || UI_TEXTS.zh;
-  alert(t.transferMsg);
-}
-
-
-// ===== LOCAL KEYWORD MATCHING ENGINE =====
-// ============================================
-// MESSAGE RENDERING (unchanged logic)
+// MESSAGE RENDERING
 // ============================================
 
 function getTime() {
@@ -783,6 +637,7 @@ function scrollToBottom() {
   setTimeout(() => c.scrollTo({ top: c.scrollHeight, behavior: 'smooth' }), 80);
 }
 
+// Add a system message
 function addSysMessage(text) {
   const div = document.createElement('div');
   div.className = 'sys-msg';
@@ -791,62 +646,90 @@ function addSysMessage(text) {
   scrollToBottom();
 }
 
-function addAgentReply(content, extra) {
-  if (!extra) extra = {};
+// Add an agent message with full HTML support (with RTL support for Arabic)
+function addAgentReply(content, extra = {}) {
   const container = document.getElementById('messagesContainer');
   const group = document.createElement('div');
   group.className = 'message-row agent';
   
+  // Process content: convert markdown bold, handle newlines, detect RTL
   let processed = content
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
     .replace(/\n/g, '<br>');
   
+  // Detect if Arabic (RTL)
   const isRTL = currentLang === 'ar' || /[\u0600-\u06FF]/.test(content);
   group.style.direction = isRTL ? 'rtl' : 'ltr';
-  if (isRTL) { group.style.textAlign = 'right'; }
+  if (isRTL) {
+    group.style.textAlign = 'right';
+  }
   
-  var btnLabels = {
+  const btnLabels = {
     zh: {ok:'👍 有帮助', bad:'👎 无帮助', marked_ok:'已标记 👍', marked_bad:'已标记 👎'},
     en: {ok:'👍 Helpful', bad:'👎 Unhelpful', marked_ok:'Marked 👍', marked_bad:'Marked 👎'},
     de: {ok:'👍 Hilfreich', bad:'👎 Nicht hilfreich', marked_ok:'Markiert 👍', marked_bad:'Markiert 👎'},
     ja: {ok:'👍 役に立った', bad:'👎 役に立たなかった', marked_ok:'マーク済み 👍', marked_bad:'マーク済み 👎'},
     ar: {ok:'👍 مفيد', bad:'👎 غير مفيد', marked_ok:'تم التحديد 👍', marked_bad:'تم التحديد 👎'}
   };
-  var labels = btnLabels[currentLang] || btnLabels.zh;
+  const labels = btnLabels[currentLang] || btnLabels.zh;
   
-  group.innerHTML = '<div class="msg-avatar">🤖</div><div class="msg-body"><div class="msg-text">' + processed + '</div><div class="feedback-bar"><button class="fb-btn ok" onclick="this.style.background=\'rgba(34,197,94,.15)\';this.style.borderColor=\'#22c55e\';this.textContent=\'' + labels.marked_ok + '\'">👍 ' + labels.ok + '</button><button class="fb-btn bad" onclick="this.style.background=\'rgba(239,68,68,.15)\';this.style.borderColor=\'#ef4444\';this.textContent=\'' + labels.marked_bad + '\'">👎 ' + labels.bad + '</button></div><div class="msg-footer"><span class="msg-sender msg-agent">Luna (AI)</span><span class="msg-time">' + getTime() + (extra.time ? ' · ⏱ '+extra.time+'s' : '') + '</span></div></div>';
+  group.innerHTML = `
+    <div class="msg-avatar">🤖</div>
+    <div class="msg-body">
+      <div class="msg-text">${processed}</div>
+      <div class="feedback-bar">
+        <button class="fb-btn ok" onclick="this.style.background='rgba(34,197,94,.15)';this.style.borderColor='#22c55e';this.textContent='${labels.marked_ok}'">👍 ${labels.ok}</button>
+        <button class="fb-btn bad" onclick="this.style.background='rgba(239,68,68,.15)';this.style.borderColor='#ef4444';this.textContent='${labels.marked_bad}'">👎 ${labels.bad}</button>
+      </div>
+      <div class="msg-footer">
+        <span class="msg-sender msg-agent">Luna (AI)</span>
+        <span class="msg-time">${getTime()}${extra.time ? ' · ⏱ '+extra.time+'s' : ''}</span>
+      </div>
+    </div>`;
   
   container.appendChild(group);
   scrollToBottom();
 }
 
+// Add a user message
 function addUserMessage(text) {
   const container = document.getElementById('messagesContainer');
   const group = document.createElement('div');
   group.className = 'message-row user';
   
+  // Detect RTL for Arabic
   const isRTL = currentLang === 'ar' || /[\u0600-\u06FF]/.test(text);
   group.style.direction = isRTL ? 'rtl' : 'ltr';
   
-  group.innerHTML = '<div class="msg-avatar">李</div><div class="msg-body"><div class="msg-text">' + text.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</div><div class="msg-footer"><span class="msg-time msg-you">' + getTime() + '</span></div></div>';
+  group.innerHTML = `
+    <div class="msg-avatar">李</div>
+    <div class="msg-body">
+      <div class="msg-text">${text.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
+      <div class="msg-footer">
+        <span class="msg-time msg-you">${getTime()}</span>
+      </div>
+    </div>`;
   
   container.appendChild(group);
   scrollToBottom();
 }
 
+// Show typing animation then reply
 async function showTypingThenReply(actionText) {
   addUserMessage(actionText);
   isTyping = true;
   document.getElementById('sendBtn').disabled = true;
   
+  // Add typing indicator
   const container = document.getElementById('messagesContainer');
   const typingRow = document.createElement('div');
   typingRow.className = 'message-row agent';
   typingRow.id = 'typingRow';
-  typingRow.innerHTML = '<div class="msg-avatar">🤖</div><div class="msg-body"><div class="msg-text"><div class="typing-indicator"><span></span><span></span><span></span></div></div></div>';
+  typingRow.innerHTML = `<div class="msg-avatar">🤖</div><div class="msg-body"><div class="msg-text"><div class="typing-indicator"><span></span><span></span><span></span></div></div></div>`;
   container.appendChild(typingRow);
   scrollToBottom();
   
+  // First try: connect to Flask API
   try {
     const resp = await fetch(API_URL, {
       method: 'POST',
@@ -860,21 +743,23 @@ async function showTypingThenReply(actionText) {
       const replyTime = data.response_time_ms || 0;
       addAgentReply(data.reply, { time: (replyTime / 1000).toFixed(1) });
     } else {
-      throw new Error("Non-200");
+      throw new Error("Non-200 status");
     }
   } catch (err) {
+    // FALLBACK: Use local keyword matching engine
     console.log("API not available, using local demo mode...");
     const reply = getLocalReply(actionText, currentLang);
     if (reply) {
       removeTyping();
       addAgentReply(reply, { time: "0.5" });
     } else {
+      // Ultimate fallback
       const fallbacks = {
         zh: "感谢您的咨询！😊\n\n我是 Luna，您的专属购物助手。\n\n我可以帮助您：\n• 📦 查询订单物流\n• 🔄 退换货处理\n• 👗 尺码推荐\n• 🎉 最新促销活动\n\n请问有什么可以帮您的呢？",
-        en: "Thank you for your message! 😊\n\nI am Luna, your virtual shopping assistant.\n\nI can help you with:\n• 📦 Tracking your order\n• 🔄 Returns & exchanges\n• 👕 Size recommendations\n• 🎉 Current promotions\n\nCould you be more specific? I am here to help!",
+        en: "Thank you for your message! 😊\n\nI am Luna, your virtual shopping assistant at TrendyWear.\n\nI can help you with:\n• 📦 Tracking your order\n• 🔄 Returns & exchanges\n• 👕 Size recommendations\n• 🎉 Current promotions\n\nCould you be more specific? I am here to help!",
         de: "Vielen Dank für Ihre Nachricht! 😊\n\nIch bin Luna, Ihr virtueller Einkaufsassistent.\n\nIch kann Ihnen helfen bei:\n• 📦 Sendungsverfolgung\n• 🔄 Rückgabe & Umtausch\n• 👕 Größempfehlungen\n• 🎉 Aktuelle Angebote\n\nKönnen Sie genauer sein? Ich helfe gerne!",
-        ja: "お問い合わせありがとうございます！😊\n\nLuna、TrendyWearの仮想アシスタントです。\n\nお手伝いできます：\n• 📦 配送追跡\n• 🔄 返品・交換\n• 👕 サイズ推薦\n• 🎉 最新のプロモーション\n\nもう少し詳しくお知らせください！",
-        ar: "شكراً لاستفسارك! 😊\n\nأنا لونا، مساعد التسوق الافتراضي.\n\nيمكنني مساعدتك في:\n• 📦 تتبع الطلب\n• 🔄 الإرجاع والتبادل\n• 👕 توصيات المقاسات\n• 🎉 العروض الحالية\n\nهل يمكنك أن تكون أكثر تحديداً؟ أنا هنا للمساعدة!"
+        ja: "お問い合わせありがとうございます！😊\n\nLuna、TrendyWearの仮想ショッピングアシスタントです。\n\nお手伝いできます：\n• 📦 配送追跡\n• 🔄 返品・交換\n• 👕 サイズ推薦\n• 🎉 最新のプロモーション\n\nもう少し詳しくお知らせください！",
+        ar: "شكراً لاستفسارك! 😊\n\nأنا لونا، مساعد التسوق الافتراضي في TrendyWear.\n\nيمكنني مساعدتك في:\n• 📦 تتبع الطلب\n• 🔄 الإرجاع والتبادل\n• 👕 توصيات المقاسات\n• 🎉 العروض الحالية\n\nهل يمكنك أن تكون أكثر تحديداً؟ أنا هنا للمساعدة!"
       };
       removeTyping();
       addAgentReply(fallbacks[currentLang] || fallbacks.zh, { time: "0.5" });
@@ -891,6 +776,8 @@ function removeTyping() {
   if (el) el.remove();
 }
 
+// ===== MAIN FUNCTIONS =====
+
 function sendMessage() {
   const input = document.getElementById('msgInput');
   const text = input.value.trim();
@@ -900,48 +787,47 @@ function sendMessage() {
 }
 
 function sendAction(text) {
+  // Immediately scroll to bottom to see response
   showTypingThenReply(text);
 }
 
 function setLang(btn, lang) {
   currentLang = lang;
-  renderAllDynamicContent(lang);
+  document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
   
-  // Update welcome message for the new language
-  const welcomeMessages = {
-    zh: '您好！欢迎来到 TrendyWear 👋\n\n我是您的专属购物助手 Luna，可以帮您：\n\n📦 查询物流状态\n🔄 退换货政策\n👗 尺码推荐\n🎉 最新优惠\n\n请问有什么可以帮您的？😊',
-    en: 'Welcome to TrendyWear! 👋\n\nI am your shopping assistant Luna, here to help you with:\n\n📦 Track your order\n🔄 Return & Exchange policy\n👕 Size recommendations\n🎉 Latest deals\n\nHow can I assist you? 😊',
-    de: 'Willkommen bei TrendyWear! 👋\n\nIch bin Ihr Einkaufsassistent Luna und helfe Ihnen gerne:\n\n📦 Sendungsverfolgung\n🔄 Rückgabe & Umtausch\n👕 Größempfehlungen\n🎉 Aktuelle Angebote\n\nWie kann ich Ihnen helfen? 😊',
-    ja: 'TrendyWearへようこそ！👋\n\nお買い物のアシスタントLunaです。以下をご案内できます：\n\n📦 配送追跡\n🔄 返品・交換\n👕 サイズガイド\n🎉 最新キャンペーン\n\n何かお手伝いできることはありますか？😊',
-    ar: 'مرحبا بك في TrendyWear! 👋\n\nأنا لونا، مساعد التسوق الخاص بك ومساعدة:\n\n📦 تتبع الطلب\n🔄 سياسة الإرجاع والتبادل\n👕 توصيات المقاسات\n🎉 أحدث العروض\n\nكيف يمكنني مساعدتك؟ 😊'
-  };
+  const placeholders = { zh:'输入您的问题...', en:'Type your message...', de:'Nachricht eingeben...', ja:'メッセージを入力...', ar:'اكتب رسالتك...' };
+  document.getElementById('msgInput').placeholder = placeholders[lang] || placeholders['zh'];
   
   const langNames = { zh:'中文', en:'English', de:'Deutsch', ja:'日本語', ar:'العربية' };
-  const lc = document.getElementById('currentLangLabel');
-  if (lc) lc.textContent = langNames[lang];
-  
-  // Clear messages and show new welcome
-  const container = document.getElementById('messagesContainer');
-  container.innerHTML = '';
-  addAgentReply(welcomeMessages[lang] || welcomeMessages.zh, {});
+  document.getElementById('currentLangLabel').textContent = langNames[lang] || langNames.zh;
 }
 
 // ===== INIT: Welcome message =====
 window.addEventListener('DOMContentLoaded', () => {
-  // Start with full UI populated by dynamic content system
-  renderAllDynamicContent(currentLang);
+  const container = document.getElementById('messagesContainer');
+  container.innerHTML = '';
   
-  // Welcome messages
+  // Demo mode banner
+  const demoBanner = document.createElement('div');
+  demoBanner.className = 'demo-mode-banner';
+  demoBanner.innerHTML = '⚡ 离线演示模式 — 自动关键词匹配回复（不依赖后端服务）';
+  container.appendChild(demoBanner);
+  
+  // Welcome messages by language
   const welcomeMessages = {
     zh: '您好！欢迎来到 TrendyWear 👋\n\n我是您的专属购物助手 Luna，可以帮您：\n\n📦 查询物流状态\n🔄 退换货政策\n👗 尺码推荐\n🎉 最新优惠\n\n请问有什么可以帮您的？😊',
     en: 'Welcome to TrendyWear! 👋\n\nI am your shopping assistant Luna, here to help you with:\n\n📦 Track your order\n🔄 Return & Exchange policy\n👕 Size recommendations\n🎉 Latest deals\n\nHow can I assist you? 😊',
     de: 'Willkommen bei TrendyWear! 👋\n\nIch bin Ihr Einkaufsassistent Luna und helfe Ihnen gerne:\n\n📦 Sendungsverfolgung\n🔄 Rückgabe & Umtausch\n👕 Größempfehlungen\n🎉 Aktuelle Angebote\n\nWie kann ich Ihnen helfen? 😊',
     ja: 'TrendyWearへようこそ！👋\n\nお買い物のアシスタントLunaです。以下をご案内できます：\n\n📦 配送追跡\n🔄 返品・交換\n👕 サイズガイド\n🎉 最新キャンペーン\n\n何かお手伝いできることはありますか？😊',
-    ar: 'مرحبا بك في TrendyWear! 👋\n\nأنا لونا، مساعد التسوق الخاص بك ومساعدة:\n\n📦 تتبع الطلب\n🔄 سياسة الإرجاع والتبادل\n👕 توصيات المقاسات\n🎉 أحدث العروض\n\nكيف يمكنني مساعدتك؟ 😊'
+    ar: '!مرحبا بك في TrendyWear 👋\n\nأنا لونا، مساعد التسوق الخاص بك ومساعدة:\n\n📦 تتبع الطلب\n🔄 سياسة الإرجاع والتبادل\n👕 توصيات المقاسات\n🎉 أحدث العروض\n\nكيف يمكنني مساعدتك؟ 😊'
   };
   
-  addAgentReply(welcomeMessages[currentLang] || welcomeMessages.zh, {});
+  const langMap = { zh:'zh', en:'en', de:'de', ja:'ja', ar:'ar' };
+  addSysMessage(`💬 会话开始 · 语言: ${document.querySelector('.lang-btn.active')?.textContent || '中文'}`);
+  addAgentReply(welcomeMessages[langMap[currentLang]] || welcomeMessages.zh, {});
 });
+
 </script>
 </div>
 <!-- end main-layout -->
