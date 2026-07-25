@@ -293,6 +293,11 @@ body {
   border-color: var(--primary); color: var(--primary);
   background: rgba(99,102,241,0.1);
 }
+.num {
+  display:inline-block; width:16px; height:16px; line-height:16px; border-radius:4px;
+  background:var(--primary); color:#fff; font-size:10px; font-weight:700; text-align:center;
+  margin-right:3px; vertical-align:middle;
+}
 
 .input-wrapper {
   display: flex; gap: 8px; align-items: stretch;
@@ -413,6 +418,7 @@ body {
     </div>
   </div>
   
+  
   <div class="sidebar-stats">
     <div class="stat-item">
       <div class="stat-value">24/7</div>
@@ -428,13 +434,15 @@ body {
     </div>
   </div>
   
-  <div class="conv-section-title" id="quickStartTitle">快速开始</div>
+  <!-- Simulated customer conversations -->
+  <div class="conv-section-title" id="convTitle">客户对话</div>
   <div class="conv-list" id="convList"></div>
   
+  <!-- Agent settings at bottom -->
   <div class="sidebar-footer">
     <div class="stats-row">
-      <span id="langLabel">当前语言:</span>
-      <span id="currentLangLabel">中文</span>
+      <span id="agentStatusLabel">在线</span>
+      <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--success);vertical-align:middle;margin-right:6px;" id="onlineDot"></span>
     </div>
     <div class="lang-toggle" id="langToggle"></div>
   </div>
@@ -706,22 +714,28 @@ const UI_TEXTS = {
 function renderAllDynamicContent(lang) {
   const t = UI_TEXTS[lang] || UI_TEXTS.zh;
   
-  const qst = document.getElementById('quickStartTitle');
-  if (qst) qst.textContent = t.quickStart;
+  // Sidebar: conversation list title
+  const ct = document.getElementById('convTitle');
+  if (ct) ct.textContent = t.quickStart === '快速开始' ? '客户对话' : 'Customer Conversations';
   
-  const ll = document.getElementById('langLabel');
-  if (ll) ll.textContent = t.langLabel;
-  
-  // Sidebar items
+  // Sidebar: simulated customer conversations
   const cl = document.getElementById('convList');
   if (cl) {
     cl.innerHTML = '';
-    t.sidebarItems.forEach((item, i) => {
-      const activeClass = item.active ? 'active' : '';
-      const el = document.createElement('div');
-      el.className = 'conv-item ' + activeClass;
-      el.onclick = function() { sendAction(item.action); };
-      el.innerHTML = '<div class="conv-avatar" style="background: ' + item.color + ';">' + item.action.charAt(0) + '</div><div class="conv-info"><div class="conv-name">' + item.name + '</div><div class="conv-preview">' + item.preview + '</div></div><div class="conv-meta"><div class="conv-time">' + item.tag + '</div></div>';
+    const customers = [
+      { name: t.sidebarItems[0].name, preview: t.sidebarItems[0].preview + ' · 刚刚', time: '12:30', avatar: '📦', active: true, color: 'var(--success)', action: t.sidebarItems[0].action },
+      { name: t.sidebarItems[1].name, preview: t.sidebarItems[1].preview + ' · 3分钟前', time: '12:27', avatar: '🔄', active: false, color: 'var(--warning)', action: t.sidebarItems[1].action },
+      { name: t.sidebarItems[2].name, preview: t.sidebarItems[2].preview + ' · 5分钟前', time: '12:25', avatar: '👕', active: false, color: 'var(--accent)', action: t.sidebarItems[2].action },
+      { name: t.sidebarItems[3].name, preview: t.sidebarItems[3].preview + ' · 12分钟前', time: '12:18', avatar: '🎉', active: false, color: 'var(--danger)', action: t.sidebarItems[3].action }
+    ];
+    customers.forEach(function(cust) {
+      var el = document.createElement('div');
+      el.className = 'conv-item' + (cust.active ? ' active' : '');
+      el.onclick = function() { 
+        // Show welcome message and start this topic
+        addAgentReply(cust.preview.replace(' · ' + cust.time, ''), {});
+      };
+      el.innerHTML = '<div class="conv-avatar" style="background:' + cust.color + '">' + cust.avatar + '</div><div class="conv-info"><div class="conv-name">' + cust.name + '</div><div class="conv-preview">' + cust.preview + '</div></div><div class="conv-meta"><div class="conv-time">' + cust.time + '</div></div>';
       cl.appendChild(el);
     });
   }
@@ -730,16 +744,17 @@ function renderAllDynamicContent(lang) {
   const lt = document.getElementById('langToggle');
   if (lt) {
     lt.innerHTML = '';
-    ['zh','en','de','ja','ar'].forEach(l => {
-      const btn = document.createElement('button');
+    ['zh','en','de','ja','ar'].forEach(function(l) {
+      var btn = document.createElement('button');
       btn.className = 'lang-btn' + (l === lang ? ' active' : '');
-      const labels = { zh:'中文', en:'EN', de:'DE', ja:'JA', ar:'AR' };
+      var labels = {zh:'中文',en:'EN',de:'DE',ja:'JA',ar:'AR'};
       btn.textContent = labels[l];
       btn.onclick = function() { setLang(this, l); };
       lt.appendChild(btn);
     });
   }
   
+  // Input area elements
   const si = document.getElementById('msgInput');
   if (si) si.placeholder = t.inputPlaceholder;
   
@@ -749,12 +764,12 @@ function renderAllDynamicContent(lang) {
   const tb = document.getElementById('transferBtn');
   if (tb) tb.textContent = t.transferBtn;
   
-  // Numbered shortcut actions
+  // Numbered shortcut actions below input
   const sa = document.getElementById('shortcutActions');
   if (sa) {
     sa.innerHTML = '';
-    t.shortcuts.forEach((s, i) => {
-      const btn = document.createElement('button');
+    t.shortcuts.forEach(function(s, i) {
+      var btn = document.createElement('button');
       btn.className = 'action-btn';
       btn.onclick = function() { sendAction(s.action); };
       btn.innerHTML = '<span class="num">' + (i+1) + '</span> ' + s.label;
@@ -907,6 +922,13 @@ function setLang(btn, lang) {
   currentLang = lang;
   renderAllDynamicContent(lang);
   
+  // Update title for new language
+  const ct = document.getElementById('convTitle');
+  if (ct) {
+    const titles = { zh:'客户对话', en:'Conversations', de:'Gespräche', ja:'会話', ar:'المحادثات' };
+    ct.textContent = titles[lang] || '客户对话';
+  }
+  
   // Update welcome message for the new language
   const welcomeMessages = {
     zh: '您好！欢迎来到 TrendyWear 👋\n\n我是您的专属购物助手 Luna，可以帮您：\n\n📦 查询物流状态\n🔄 退换货政策\n👗 尺码推荐\n🎉 最新优惠\n\n请问有什么可以帮您的？😊',
@@ -917,7 +939,10 @@ function setLang(btn, lang) {
   };
   
   const langNames = { zh:'中文', en:'English', de:'Deutsch', ja:'日本語', ar:'العربية' };
-  const lc = document.getElementById('currentLangLabel');
+  const lc = 
+  const ct = document.getElementById('convTitle');
+  if (ct && lang === 'zh') ct.textContent = '客户对话';
+  document.getElementById('currentLangLabel');
   if (lc) lc.textContent = langNames[lang];
   
   // Clear messages and show new welcome
